@@ -12,6 +12,7 @@ export const queryClient =
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false, // Required for transaction mode pooling (Supavisor)
+    ssl: 'require',
   });
 
 if (env.NODE_ENV !== "production") globalForDb.postgres = queryClient;
