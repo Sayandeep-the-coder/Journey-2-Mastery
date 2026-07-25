@@ -47,26 +47,33 @@ export default function CommentThread({ submissionId }: CommentThreadProps) {
         </div>
       ) : comments && comments.length > 0 ? (
         <div className="space-y-4">
-          {comments.map((comment: Comment) => (
-            <div key={comment.id} className="flex gap-3">
-              <Avatar className="h-8 w-8">
-                {comment.userAvatar && <AvatarImage src={comment.userAvatar} />}
-                <AvatarFallback className="text-xs">
-                  {comment.userName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-primary-text">{comment.userName}</span>
-                  <span className="text-xs text-muted-text capitalize">{comment.userRole}</span>
-                  <span className="text-xs text-muted-text">
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
+          {comments.map((comment: Comment) => {
+            const userName = comment.userName || (comment as any).author?.username || 'User';
+            const userAvatar = comment.userAvatar || (comment as any).author?.avatarUrl;
+            const userRole = comment.userRole || (comment as any).author?.role || 'user';
+            const textContent = comment.content || (comment as any).message || '';
+
+            return (
+              <div key={comment.id} className="flex gap-3">
+                <Avatar className="h-8 w-8">
+                  {userAvatar && <AvatarImage src={userAvatar} />}
+                  <AvatarFallback className="text-xs">
+                    {userName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-primary-text">{userName}</span>
+                    <span className="text-xs text-muted-text capitalize">{userRole}</span>
+                    <span className="text-xs text-muted-text">
+                      {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}
+                    </span>
+                  </div>
+                  <p className="text-sm text-secondary-text">{textContent}</p>
                 </div>
-                <p className="text-sm text-secondary-text">{comment.content}</p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="text-sm text-muted-text py-4">No comments yet. Start the discussion.</p>

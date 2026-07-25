@@ -7,8 +7,13 @@ export async function getComments(submissionId: string) {
     .select({
       id: comments.id,
       submissionId: comments.submissionId,
-      message: comments.message,
+      userId: users.id,
+      userName: users.username,
+      userAvatar: users.avatarUrl,
+      userRole: users.role,
+      content: comments.message,
       createdAt: comments.createdAt,
+      message: comments.message,
       author: {
         id: users.id,
         username: users.username,
@@ -45,8 +50,13 @@ export async function createComment(data: {
     .select({
       id: comments.id,
       submissionId: comments.submissionId,
-      message: comments.message,
+      userId: users.id,
+      userName: users.username,
+      userAvatar: users.avatarUrl,
+      userRole: users.role,
+      content: comments.message,
       createdAt: comments.createdAt,
+      message: comments.message,
       author: {
         id: users.id,
         username: users.username,
@@ -60,3 +70,4 @@ export async function createComment(data: {
 
   return result;
 }
+
