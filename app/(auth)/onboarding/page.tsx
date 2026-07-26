@@ -23,8 +23,8 @@ const onboardingSchema = z.object({
   location: z.string().min(2, 'Location is required').max(100),
   bio: z.string().min(10, 'Bio is required (at least 10 characters)').max(500, 'Bio must be under 500 characters'),
   discord: z.string().min(2, 'Discord username is required').max(100),
+  instagram: z.string().max(100).optional().or(z.literal('')),
   twitter: z.string().min(2, 'Twitter (X) handle is required').max(100),
-  linkedin: z.string().min(5, 'LinkedIn profile URL is required').max(200),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -51,8 +51,8 @@ export default function OnboardingPage() {
       location: '',
       bio: '',
       discord: '',
+      instagram: '',
       twitter: '',
-      linkedin: '',
     },
   });
 
@@ -69,6 +69,9 @@ export default function OnboardingPage() {
       year: data.year,
       phone: data.phone,
       bio: data.bio,
+      discord: data.discord,
+      instagram: data.instagram,
+      twitter: data.twitter,
     });
   };
 
@@ -282,7 +285,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Twitter & LinkedIn */}
+          {/* Twitter & Instagram */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="twitter" className="text-xs font-medium text-[#4A4A4A]">
@@ -300,17 +303,17 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="linkedin" className="text-xs font-medium text-[#4A4A4A]">
-                LinkedIn <span className="text-[#B93A32]">*</span>
+              <Label htmlFor="instagram" className="text-xs font-medium text-[#4A4A4A]">
+                Instagram
               </Label>
               <Input
-                id="linkedin"
-                placeholder="linkedin.com/in/username"
-                {...register('linkedin')}
+                id="instagram"
+                placeholder="@handle"
+                {...register('instagram')}
                 className="bg-white border-[#D8D0C8] focus-visible:ring-[#B93A32]/30"
               />
-              {errors.linkedin && (
-                <p className="text-xs text-[#B93A32] font-medium">{errors.linkedin.message}</p>
+              {errors.instagram && (
+                <p className="text-xs text-[#B93A32] font-medium">{errors.instagram.message}</p>
               )}
             </div>
           </div>

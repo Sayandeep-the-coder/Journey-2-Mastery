@@ -6,8 +6,11 @@ export const completeProfileSchema = z.object({
   collegeName: z.string().min(2, 'College name is required').max(200),
   branch: z.string().min(2, 'Branch is required').max(100),
   year: z.string().min(1, 'Year is required'),
-  phone: z.string().min(10, 'Enter a valid phone number').max(15),
+  phone: z.string().min(7, 'Enter a valid phone number').max(20),
   bio: z.string().max(500, 'Bio must be under 500 characters').optional().default(''),
+  discord: z.string().max(100).optional().default(''),
+  instagram: z.string().max(100).optional().default(''),
+  twitter: z.string().max(100).optional().default(''),
 });
 export type CompleteProfileForm = z.infer<typeof completeProfileSchema>;
 
@@ -17,8 +20,11 @@ export const updateProfileSchema = z.object({
   collegeName: z.string().min(2).max(200).optional(),
   branch: z.string().min(2).max(100).optional(),
   year: z.string().optional(),
-  phone: z.string().min(10).max(15).optional(),
+  phone: z.string().optional(),
   bio: z.string().max(500).optional(),
+  discord: z.string().max(100).optional(),
+  instagram: z.string().max(100).optional(),
+  twitter: z.string().max(100).optional(),
 });
 export type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
 

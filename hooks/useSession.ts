@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
-import type { User } from '@/types/api.types';
+import type { User, CompleteProfilePayload } from '@/types/api.types';
 import { useRouter } from 'next/navigation';
 
 export function useSession() {
@@ -28,7 +28,7 @@ export function useCompleteProfile() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: (data: { fullName: string; collegeName: string; branch: string; year: string; phone: string; bio: string }) =>
+    mutationFn: (data: CompleteProfilePayload) =>
       apiFetch('/auth/complete-profile', {
         method: 'POST',
         body: JSON.stringify(data),

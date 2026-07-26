@@ -19,6 +19,9 @@ export interface User {
   year?: string;
   phone?: string;
   bio?: string;
+  discord?: string | null;
+  instagram?: string | null;
+  twitter?: string | null;
   rank: Rank;
   score: number;
   currentTeamId?: string | null;
@@ -40,6 +43,9 @@ export interface CompleteProfilePayload {
   year: string;
   phone: string;
   bio: string;
+  discord?: string;
+  instagram?: string;
+  twitter?: string;
 }
 
 // ─── Tasks ───
