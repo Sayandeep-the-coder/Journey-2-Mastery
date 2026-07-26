@@ -1,15 +1,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/Hono-4-orange?logo=hono" alt="Hono 4" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Drizzle_ORM-0.44-C5F74F?logo=drizzle" alt="Drizzle ORM" />
   <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
 </p>
 
 # ⛩️ Journey to Mastery (J2M)
 
 A full-stack gamified learning platform inspired by the Japanese martial arts ranking system. Students progress through ranks — **Ronin → Kenshi → Samurai → Shogun** — by completing coding tasks, submitting GitHub repositories for review, and earning scores on a competitive leaderboard.
+
+---
 
 ## ✨ Features
 
@@ -41,7 +43,7 @@ A full-stack gamified learning platform inspired by the Japanese martial arts ra
 - **Full CRUD** — manage users, tasks, submissions, judges, and posts
 - **Judge management** — promote/demote, view workload/performance metrics
 - **Unassigned queue** — manually assign orphaned submissions
-- **Leaderboard management** — recalculate scores and trigger queue-based updates
+- **Leaderboard management** — recalculate scores and trigger updates
 - **Audit logging** — track all administrative actions
 - **Activity Feed** — real-time tracking of platform activity
 
@@ -50,29 +52,33 @@ A full-stack gamified learning platform inspired by the Japanese martial arts ra
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────┐      ┌──────────────────┐
-│   Next.js 16        │      │   Hono API        │
-│   (Frontend)        │─────▶│   (Backend)       │
-│   Port 3001         │proxy │   Port 3000       │
-└─────────────────────┘      └──────┬───────────┘
-                                    │
-                          ┌─────────┴─────────┐
-                          ▼                   ▼
-                    ┌──────────┐         ┌─────────┐
-                    │PostgreSQL│         │  Redis  │
-                    │  (DB)    │         │ (Cache) │
-                    └──────────┘         └─────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Next.js 16 App Router                │
+│                                                         │
+│   ┌─────────────────────┐     ┌─────────────────────┐   │
+│   │   Frontend Pages    │     │   API Routes        │   │
+│   │   (React 19, GSAP)  │────▶│   (/api/v1/*)       │   │
+│   └─────────────────────┘     └──────────┬──────────┘   │
+└──────────────────────────────────────────┼──────────────┘
+                                           │
+                                 ┌─────────┴─────────┐
+                                 ▼                   ▼
+                           ┌──────────┐         ┌─────────┐
+                           │PostgreSQL│         │  Redis  │
+                           │(Drizzle) │         │ (Cache) │
+                           └──────────┘         └─────────┘
 ```
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Frontend | Next.js 16, React 19, TailwindCSS 4 | SSR/SSG pages, GSAP animations |
-| API | Hono 4 on Node.js | REST API, JWT auth, RBAC middleware |
-| Database | PostgreSQL 16 + Drizzle ORM | Relational data, migrations |
-| Cache | Redis 7 / Upstash Redis | Session blacklisting, rate limiting |
-| Queue | Inline (MockQueue) | Background tasks executed inline (compatible with Vercel) |
-| Storage | S3-compatible (Supabase Storage) | File/image uploads |
-| Auth | GitHub OAuth 2.0 + JWT | Stateless authentication |
+| Full-Stack Framework | Next.js 16 (App Router), React 19 | SSR/SSG UI & native REST API endpoints |
+| Styling & UI | TailwindCSS 4, Radix UI primitives | Modern Japanese editorial aesthetics, dark/light themes |
+| Animations | GSAP 3.15, Lenis Smooth Scroll | Scroll-triggered transitions & smooth interactions |
+| State & Fetching | TanStack Query v5 | Server state caching, optimistic updates |
+| Database | PostgreSQL 16 + Drizzle ORM | Relational schema management & type-safe queries |
+| Cache & Session | Redis 7 (ioredis) | Rate limiting, session tracking, & token management |
+| File Uploads | S3-compatible / Cloudinary / Local | Profile avatars & community post attachments |
+| Authentication | GitHub OAuth 2.0 + JWT | Stateless, secure authentication |
 
 ---
 
@@ -81,48 +87,38 @@ A full-stack gamified learning platform inspired by the Japanese martial arts ra
 ### Prerequisites
 
 - **Node.js** ≥ 20
-- **Docker** & **Docker Compose** (for containerized setup)
+- **PostgreSQL** 16+ (local or cloud like Neon/Supabase)
+- **Redis** 7+ (local or Upstash)
 - **GitHub OAuth App** — [Create one here](https://github.com/settings/developers)
-- **PostgreSQL** 16+ (or use Docker)
-- **Redis** 7+ (or use Docker / Upstash)
 
-### Option 1: Docker (Recommended)
+### Local Setup
 
-```bash
-# Clone the repository
-git clone https://github.com/VanshDeo/Journey-2-Mastery.git
-cd Journey-2-Mastery
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Sayandeep-the-coder/Journey-2-Mastery.git
+   cd Journey-2-Mastery
+   ```
 
-# Create .env file (see Environment Variables section below)
-cp .env.example .env
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-# Build and start all services
-docker-compose up --build -d
+3. **Configure environment variables:**
+   ```bash
+   cp .env.example .env   # Or create .env based on the template below
+   ```
 
-# View logs
-docker logs -f j2m-api       # API server
-docker logs -f j2m-frontend  # Next.js frontend
-docker logs -f j2m-worker    # Background worker
-```
+4. **Apply database schema:**
+   ```bash
+   npm run db:push
+   ```
 
-Services will be available at:
-- **Frontend:** http://localhost:3001
-- **API:** http://localhost:3000
-- **API Health:** http://localhost:3000/api/v1/health
-
-### Option 2: Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run database migrations
-npm run db:push
-
-# Start all services (2 terminals)
-npm run dev           # Next.js frontend on :3001
-npm run dev:backend   # Hono API on :3000 (jobs run inline)
-```
+5. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   The application will be available at [http://localhost:3001](http://localhost:3001).
 
 ---
 
@@ -138,7 +134,7 @@ API_VERSION=v1
 FRONTEND_URL=http://localhost:3001
 
 # ── Database ──
-DATABASE_URL=postgresql://postgres:password@localhost:6543/j2m
+DATABASE_URL=postgresql://postgres:password@localhost:5432/j2m
 DATABASE_URL_DIRECT=postgresql://postgres:password@localhost:5432/j2m
 
 # ── Redis ──
@@ -148,15 +144,15 @@ REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-jwt-secret-min-32-chars
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=7d
-ENCRYPTION_KEY=your-64-char-hex-encryption-key
+ENCRYPTION_KEY=your-32-char-min-encryption-key
 
 # ── GitHub OAuth ──
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 GITHUB_CALLBACK_URL=http://localhost:3001/api/v1/auth/github/callback
 
-# ── File Upload (S3-compatible) ──
-UPLOAD_PROVIDER=s3
+# ── File Upload ──
+UPLOAD_PROVIDER=local # local | s3 | cloudinary
 AWS_S3_ENDPOINT=https://your-s3-endpoint
 AWS_S3_REGION=your-region
 AWS_S3_BUCKET=your-bucket
@@ -180,48 +176,43 @@ REVIEW_EDIT_WINDOW_HOURS=24
 
 ```
 Journey-2-Mastery/
-├── app/                          # Next.js App Router pages
+├── app/                          # Next.js 16 App Router
 │   ├── (admin)/admin/            # Admin dashboard & management pages
-│   ├── (auth)/                   # Login, callback, onboarding
+│   ├── (auth)/                   # Authentication & onboarding flow
 │   ├── (judge)/judge/            # Judge review queue & submission review
 │   ├── (user)/                   # User dashboard, tasks, submissions, profile
-│   └── api/                      # Next.js API routes (proxy + session)
-│       └── v1/[[...route]]/      # Catch-all → Hono (for Vercel deployment)
+│   ├── join/                     # Join team page
+│   └── api/                      # Next.js API Routes
+│       └── v1/                   # REST API endpoints per domain
 │
 ├── components/                   # React components
-│   ├── admin/                    # Admin-specific components
-│   ├── judge/                    # Judge-specific components
-│   ├── shared/                   # Shared UI (Sidebar, RoleGuard, StatusBadge...)
+│   ├── admin/                    # Admin-specific UI components
+│   ├── judge/                    # Judge evaluation components
+│   ├── shared/                   # Shared UI (Navigation, Badges, Modals...)
 │   ├── ui/                       # Radix UI primitives (Button, Card, Dialog...)
-│   └── user/                     # User-specific components
+│   └── user/                     # User dashboard & profile components
 │
 ├── hooks/                        # React hooks
-│   ├── queries/                  # TanStack Query hooks per domain
-│   └── useSession.ts             # Auth session management
+│   ├── queries/                  # TanStack Query custom hooks per domain
+│   └── useSession.ts             # Client auth session hook
 │
-├── lib/                          # Utilities
-│   ├── api-client.ts             # Typed fetch wrapper with error handling
-│   ├── query-client.ts           # TanStack Query client configuration
-│   └── utils.ts                  # cn() helper and utilities
+├── lib/                          # Core backend & frontend utilities
+│   ├── config/                   # env validation, DB & Redis client setups
+│   ├── db/                       # Drizzle ORM schema & client definitions
+│   ├── github/                   # GitHub API integration client
+│   ├── logger/                   # Pino structured logger
+│   ├── middleware/               # Auth & RBAC API route guards
+│   ├── services/                 # Core business logic layer
+│   ├── utils/                    # Error classes, response helpers, constants
+│   ├── validators/               # Zod input validation schemas
+│   ├── api-client.ts             # Typed fetch wrapper with handling
+│   └── query-client.ts           # TanStack Query client configuration
 │
-├── server/                       # Hono Backend (compiled to dist/)
-│   └── src/
-│       ├── config/               # env, db, redis, github, logger, queue
-│       ├── controllers/          # Request handlers (auth, user, judge, admin)
-│       ├── db/                   # Drizzle schema, migrations, client
-│       ├── jobs/                 # BullMQ job definitions & workers
-│       ├── middleware/           # Auth, RBAC, rate limit, error handler
-│       ├── routes/v1/            # Route definitions per domain
-│       ├── services/             # Business logic layer
-│       ├── tests/                # Unit tests (Vitest)
-│       ├── utils/                # API errors, responses, constants
-│       └── validators/           # Zod request validation schemas
-│
-├── proxy.ts                      # Next.js 16 middleware (API proxy + auth guard)
-├── docker-compose.yml            # Full stack: Postgres, Redis, API, Worker, Frontend
-├── Dockerfile                    # API + Worker container (node:20-slim)
-├── Dockerfile.frontend           # Frontend container (node:20-slim)
-└── types/                        # Shared TypeScript types
+├── types/                        # Shared TypeScript interfaces & types
+├── DESIGN.md                     # Japanese editorial design system guide
+├── ANIMATIONS.md                 # Animation guidelines (GSAP & Lenis)
+├── drizzle.config.ts             # Drizzle Kit configuration
+└── next.config.ts                # Next.js configuration
 ```
 
 ---
@@ -230,7 +221,7 @@ Journey-2-Mastery/
 
 All backend REST API endpoints are prefix-routed under `/api/v1`.
 
-### 🔑 [Auth](server/src/routes/v1/auth.routes.ts)
+### 🔑 [Auth](app/api/v1/auth)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/auth/github` | Redirect to GitHub OAuth consent screen |
@@ -243,7 +234,7 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `GET` | `/api/v1/auth/sessions` | List active sessions/devices 🔒 |
 | `DELETE` | `/api/v1/auth/sessions/:id` | Revoke a specific active session 🔒 |
 
-### 👤 [User](server/src/routes/v1/user.routes.ts)
+### 👤 [User](app/api/v1/user)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/user/dashboard` | Retrieve user dashboard statistics 🔒 |
@@ -263,7 +254,7 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `PATCH` | `/api/v1/user/settings` | Update user settings 🔒 |
 | `DELETE` | `/api/v1/user/account` | Delete own user account 🔒 |
 
-### 👥 [Teams](server/src/routes/v1/team.routes.ts)
+### 👥 [Teams](app/api/v1/teams)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `POST` | `/api/v1/teams` | Create a new team 🔒 |
@@ -278,7 +269,7 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `DELETE` | `/api/v1/teams/:id/members/:userId` | Remove member from team (creator only) 🔒 |
 | `PATCH` | `/api/v1/teams/:id/transfer-leadership` | Transfer ownership to a member (creator only) 🔒 |
 
-### ⚖️ [Judge](server/src/routes/v1/judge.routes.ts)
+### ⚖️ [Judge](app/api/v1/judge)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/judge/dashboard` | Get dashboard statistics for judge workload 🔒👨‍⚖️ |
@@ -291,7 +282,7 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `GET` | `/api/v1/judge/criteria` | List general scoring criteria 🔒👨‍⚖️ |
 | `GET` | `/api/v1/judge/workload` | View judge capacity and metrics 🔒👨‍⚖️ |
 
-### 🛡️ [Admin](server/src/routes/v1/admin.routes.ts)
+### 🛡️ [Admin](app/api/v1/admin)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/admin/dashboard` | Platform overall analytics 🔒🛡️ |
@@ -323,18 +314,18 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `DELETE` | `/api/v1/admin/posts/:id` | Delete a community post 🔒🛡️ |
 | `GET` | `/api/v1/admin/audit-log` | Get all system audit logs 🔒🛡️ |
 
-### 🏆 [Leaderboard](server/src/routes/v1/leaderboard.routes.ts)
+### 🏆 [Leaderboard](app/api/v1/leaderboard)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/leaderboard` | Get public leaderboard 🔒 |
 
-### 📢 [Community Posts](server/src/routes/v1/post.routes.ts)
+### 📢 [Community Posts](app/api/v1/posts)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/posts` | Retrieve paginated feed of published posts 🔒 |
 | `GET` | `/api/v1/posts/:id` | Retrieve details of a single post 🔒 |
 
-### 🔔 [Notifications](server/src/routes/v1/notification.routes.ts)
+### 🔔 [Notifications](app/api/v1/notifications)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/notifications` | Get paginated list of own notifications 🔒 |
@@ -342,30 +333,11 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 | `PATCH` | `/api/v1/notifications/read-all` | Mark all notifications as read 🔒 |
 | `DELETE` | `/api/v1/notifications/:id` | Delete a notification 🔒 |
 
-### 💬 [Submission Comments](server/src/routes/v1/comment.routes.ts)
+### 💬 [Submission Comments](app/api/v1/submissions)
 | Method | Endpoint | Description |
 |--------|---------|-------------|
 | `GET` | `/api/v1/submissions/:id/comments` | Get comment thread on a submission (owner/assigned judge/admin) 🔒 |
 | `POST` | `/api/v1/submissions/:id/comments` | Add comment to submission thread (owner/assigned judge/admin) 🔒 |
-
-### 🏥 [Infrastructure](server/src/routes/v1/health.routes.ts)
-| Method | Endpoint | Description |
-|--------|---------|-------------|
-| `GET` | `/api/v1/health` | Health check (verifies PostgreSQL and Redis connectivity) |
-
-> 🔒 = Requires authentication &nbsp; 👨‍⚖️ = Judge role &nbsp; 🛡️ = Admin role
-
----
-
-## 🐳 Docker Services
-
-| Container | Image | Port | Description |
-|-----------|-------|------|-------------|
-| `j2m-frontend` | `node:20-slim` | 3001 | Next.js production server |
-| `j2m-api` | `node:20-slim` | 3000 | Hono REST API |
-| `j2m-worker` | `node:20-slim` | — | BullMQ background processor |
-| `j2m-postgres` | `postgres:16-alpine` | 5432 | PostgreSQL database |
-| `j2m-redis` | `redis:7-alpine` | 6379 | Redis cache & queue broker |
 
 ---
 
@@ -383,7 +355,7 @@ All backend REST API endpoints are prefix-routed under `/api/v1`.
 ## 🧪 Testing
 
 ```bash
-# Run unit tests
+# Run unit & API service tests
 npx vitest run
 
 # Run tests in watch mode
@@ -392,50 +364,21 @@ npx vitest
 
 ---
 
-## 📦 Deployment
-
-### Vercel (Frontend + API)
-
-The project supports Vercel deployment via the catch-all route at `app/api/v1/[[...route]]/route.ts` which mounts the Hono API using `hono/vercel`. Background queue jobs (e.g. judge assignment, leaderboard recalculation, notifications) run inline automatically on serverless functions, eliminating the need for a separate worker deployment.
-
-```bash
-# Deploy to Vercel
-vercel deploy
-```
-
-### Docker (Self-hosted)
-
-```bash
-docker-compose up --build -d
-```
-
 ## 🛠️ Development Scripts & Commands
 
-Below is a reference of the available package scripts for managing the frontend, Hono backend, background workers, and PostgreSQL database migrations.
+Below is a reference of all `package.json` scripts available in the project:
 
-### Services
-* **Start Frontend**: `npm run dev` (starts Next.js on port 3001)
-* **Start Hono Backend**: `npm run dev:backend` (starts Hono server on port 3000 with hot-reload)
-* **Start Background Worker**: `npm run worker:dev` (optional; jobs run inline via `MockQueue` by default)
+### Application Lifecycle
+* **Start Dev Server**: `npm run dev` (starts Next.js App Router on port 3001)
+* **Build Production App**: `npm run build`
+* **Start Production Server**: `npm run start` (serves built app on port 3001)
+* **Lint Codebase**: `npm run lint`
 
 ### Database Management (Drizzle Kit)
-* **Push schema changes directly**: `npm run db:push` (useful for quick prototyping)
-* **Generate migration files**: `npm run db:generate` (creates SQL file under `server/src/db/migrations`)
-* **Run outstanding migrations**: `npm run db:migrate` (applies outstanding schema migrations to PostgreSQL)
-* **Explore DB via GUI**: `npm run db:studio` (launches local Drizzle Studio database manager UI)
-
-### Production Build
-* **Build Frontend**: `npm run build`
-* **Build Backend**: `npm run build:backend`
-* **Run Backend (Prod)**: `npm run start:backend`
-* **Run Worker (Prod)**: `npm run worker:prod` (optional; background tasks execute inline in serverless/Vercel environments)
-
----
-
-## 💡 Key Architectural Notes
-
-* **Next.js Middleware (`proxy.ts`)**: In this project's Next.js version, the traditional `middleware.ts` convention is deprecated in favor of `proxy.ts` in the project root. This file handles request proxying, session routing, and authentication checks.
-* **GET Fetch Caching**: To prevent Next.js from aggressively caching dynamic user sessions and state (which causes caching bugs such as redirect loops on the onboarding page), all client and proxy fetches to `/api/*` are configured with `cache: 'no-store'`.
+* **Push schema directly**: `npm run db:push` (applies schema changes to PostgreSQL)
+* **Generate SQL migration**: `npm run db:generate` (generates migration files from schema)
+* **Run migrations**: `npm run db:migrate` (applies outstanding migrations)
+* **Drizzle Studio**: `npm run db:studio` (launches local database management GUI)
 
 ---
 
@@ -446,5 +389,6 @@ This project is private and maintained by the Journey to Mastery team.
 ---
 
 <p align="center">
-  Built with ❤️ using Next.js, Hono, and PostgreSQL
+  Built with ❤️ using Next.js 16, Drizzle ORM, and PostgreSQL
 </p>
+
