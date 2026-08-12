@@ -1,24 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+
 import { useSettings, useUpdateSettings } from '@/hooks/queries/useSettings';
 import { useSessions, useRevokeSession } from '@/hooks/queries/useSettings';
-import { useLogout, useSession } from '@/hooks/useSession';
+import { useSession } from '@/hooks/useSession';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import RankBadge from '@/components/shared/RankBadge';
-import { Settings as SettingsIcon, Monitor, Award, School } from 'lucide-react';
-import { toast } from 'sonner';
+import { Settings as SettingsIcon, Monitor, School } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+
 
 function NinjaStarIcon({ className }: { className?: string }) {
   return (
@@ -34,7 +33,7 @@ export default function SettingsPage() {
   const { data: user } = useSession();
   const updateSettings = useUpdateSettings();
   const revokeSession = useRevokeSession();
-  const logout = useLogout();
+
 
   if (settingsLoading) return <LoadingSkeleton variant="form" />;
   if (settingsError) return <ErrorState error={settingsErr} onRetry={refetchSettings} />;

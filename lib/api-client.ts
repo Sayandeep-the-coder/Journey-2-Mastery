@@ -25,15 +25,7 @@ function humanMessage(code: string, fallback: string): string {
   return errorMessages[code] || fallback;
 }
 
-// ─── Resolve base URL ───
-// In the browser: use relative URLs (empty string) so requests go to the same origin.
-// On the server (SSR / RSC): use the app's own URL since the Hono backend is
-// mounted in-process via the catch-all route at app/api/v1/[[...route]].
-function getBaseUrl(): string {
-  if (typeof window !== 'undefined') return '';
-  // Server-side: point to the Next.js server itself (Hono runs in-process)
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
-}
+
 
 // ─── Client-side Fetch (Browser) ───
 export async function apiFetch<T>(

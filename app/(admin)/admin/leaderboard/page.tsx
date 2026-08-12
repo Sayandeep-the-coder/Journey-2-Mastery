@@ -5,9 +5,9 @@ import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import RankBadge from '@/components/shared/RankBadge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, RefreshCw, Download } from 'lucide-react';
 import { csvDownload } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -26,8 +26,8 @@ export default function AdminLeaderboardPage() {
     try {
       await csvDownload('/admin/leaderboard/export', 'leaderboard.csv');
       toast.success('Leaderboard CSV exported');
-    } catch (err: any) {
-      toast.error(err.message || 'Export failed');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(false);
     }

@@ -44,4 +44,4 @@ export const GET = apiHandler(async (req: Request) => {
     throw err;
   }
 
-});
+}, { rateLimitType: 'auth' });
