@@ -1,19 +1,17 @@
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-
 /**
  * Custom application error.
  * Thrown in services, caught by errorHandler middleware.
  * Automatically formatted into the standard error envelope.
  */
 export class AppError extends Error {
-  public readonly statusCode: ContentfulStatusCode;
+  public readonly statusCode: number;
   public readonly code: string;
   public readonly isOperational: boolean;
 
   constructor(
     code: string,
     message: string,
-    statusCode: ContentfulStatusCode = 400,
+    statusCode: number = 400,
     isOperational = true
   ) {
     super(message);

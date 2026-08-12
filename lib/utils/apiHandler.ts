@@ -8,10 +8,10 @@ type ApiHandlerOptions = {
 };
 
 export function apiHandler(
-  handler: (req: Request, ...args: unknown[]) => Promise<unknown>,
+  handler: (req: Request, ...args: any[]) => Promise<NextResponse | Response>,
   options: ApiHandlerOptions = { rateLimitType: 'public' }
 ) {
-  return async (req: Request, ...args: unknown[]) => {
+  return async (req: Request, ...args: any[]): Promise<NextResponse | Response> => {
     try {
       // 1. Rate Limiting
       if (options.rateLimitType) {
