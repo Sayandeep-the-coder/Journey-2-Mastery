@@ -15,6 +15,9 @@ export const completeProfileSchema = z.object({
     .max(20)
     .regex(/^[+]?[\d\s()-]+$/, "Invalid phone number format"),
   bio: z.string().max(500).optional().default(""),
+  discord: z.string().max(100).optional().default(""),
+  instagram: z.string().max(100).optional().default(""),
+  twitter: z.string().max(100).optional().default(""),
 });
 
 export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;

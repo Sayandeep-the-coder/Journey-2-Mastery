@@ -487,6 +487,13 @@ export async function updateProfile(userId: string, data: UpdateProfileInput) {
       fullName: users.fullName,
       avatarUrl: users.avatarUrl,
       bio: users.bio,
+      collegeName: users.collegeName,
+      branch: users.branch,
+      year: users.year,
+      phone: users.phone,
+      discord: users.discord,
+      instagram: users.instagram,
+      twitter: users.twitter,
     });
 
   if (!updated) throw notFound("User", userId);
