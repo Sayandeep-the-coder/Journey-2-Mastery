@@ -165,7 +165,41 @@ export async function apiUpload<T>(path: string, file: File, fieldName = 'image'
 }
 
 // ─── CSV Download helper ───
-export function apiDownloadUrl(path: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  return `${baseUrl}/api/v1${path}`;
+export async function csvDownload(path: string, fallbackFilename = 'export.csv'): Promise<void> {
+  const res = await fetch(`/api/v1${path}`, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') window.location.href = '/login';
+    throw new ApiError('UNAUTHORIZED', 'Session expired', 401);
+  }
+
+  if (!res.ok) {
+    let msg = 'Export failed';
+    try {
+      const json = await res.json();
+      if (json?.error?.message) msg = json.error.message;
+    } catch {}
+    throw new ApiError('EXPORT_FAILED', msg, res.status);
+  }
+
+  // Extract filename from Content-Disposition header if available
+  const disposition = res.headers.get('Content-Disposition');
+  let filename = fallbackFilename;
+  if (disposition) {
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    if (match?.[1]) filename = match[1];
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
