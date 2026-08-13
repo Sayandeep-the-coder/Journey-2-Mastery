@@ -10,7 +10,7 @@ import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText, Star, ChevronRight, MessageSquare } from 'lucide-react';
 import MarkdownPreview from '@/components/shared/MarkdownPreview';
 import CommentThread from '@/components/shared/CommentThread';
 import Link from 'next/link';
@@ -140,7 +140,7 @@ export default function TaskDetailPage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="submissions" 
-                className="hidden lg:inline-flex rounded-none border-b-2 border-transparent data-[state=active]:border-japan-red data-[state=active]:text-japan-red text-muted-text font-bold uppercase tracking-wider py-3 px-0 bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-japan-red data-[state=active]:text-japan-red text-muted-text font-bold uppercase tracking-wider py-3 px-0 bg-transparent data-[state=active]:shadow-none"
               >
                 Submissions
               </TabsTrigger>
@@ -236,10 +236,19 @@ export default function TaskDetailPage() {
                    </p>
 
                    <div className="flex flex-col md:flex-row items-center justify-between mt-10 gap-4">
-                      <button className="px-6 py-3 border border-borders bg-white hover:bg-card-bg rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors text-secondary-text w-full md:w-auto">
-                        <CheckCircle2 className="w-4 h-4 text-muted-text" />
-                        MARK AS COMPLETE
-                      </button>
+                      {isSubmitted ? (
+                        <Link href={`/submissions/${submissions?.find(s => s.taskId === taskId)?.id}`} className="w-full md:w-auto">
+                          <button className="px-6 py-3 border-2 border-japan-red text-japan-red hover:bg-japan-red hover:text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors w-full cursor-pointer">
+                            <Star className="w-4 h-4 fill-japan-red hover:fill-white" />
+                            VIEW SUBMISSION &amp; FEEDBACK
+                          </button>
+                        </Link>
+                      ) : (
+                        <button className="px-6 py-3 border border-borders bg-white hover:bg-card-bg rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors text-secondary-text w-full md:w-auto">
+                          <CheckCircle2 className="w-4 h-4 text-muted-text" />
+                          MARK AS COMPLETE
+                        </button>
+                      )}
 
                       {/* Custom brush button for submit */}
                       <button 
@@ -274,27 +283,71 @@ export default function TaskDetailPage() {
                 const taskSubmissions = submissions?.filter(s => s.taskId === taskId) || [];
                 return taskSubmissions.length > 0 ? (
                   <div className="space-y-4 w-full">
-                    {taskSubmissions.map(sub => (
-                      <div key={sub.id} className="p-6 bg-white border border-borders rounded-xl flex items-center justify-between shadow-sm">
-                        <div>
-                          <h4 className="font-bold text-primary-text mb-1 text-sm">{sub.repoName || 'GitHub Repository'}</h4>
-                          <a href={sub.repoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-japan-red hover:underline flex items-center gap-1 font-medium">
-                            <ExternalLink className="w-3 h-3" />
-                            View Source
-                          </a>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text mb-2">Status</span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${
-                            sub.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                            sub.status === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' :
-                            'bg-amber-100 text-amber-700 border border-amber-200'
-                          }`}>
-                            {sub.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                    {taskSubmissions.map(sub => {
+                      const reviewFeedback = sub.review?.feedback || sub.feedback;
+                      return (
+                        <Link key={sub.id} href={`/submissions/${sub.id}`} className="block group">
+                          <div className="p-6 bg-white border border-borders rounded-xl shadow-sm group-hover:shadow-md group-hover:border-japan-red/40 transition-all">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-bold text-primary-text text-base group-hover:text-japan-red transition-colors truncate">
+                                    {sub.repoName || 'GitHub Repository'}
+                                  </h4>
+                                  <ExternalLink className="w-4 h-4 text-muted-text group-hover:text-japan-red transition-colors shrink-0" />
+                                </div>
+                                <p className="text-xs text-secondary-text font-medium">
+                                  Submitted {new Date(sub.submittedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                {sub.score !== undefined && sub.score !== null && (
+                                  <span className="text-xs font-bold text-japan-red px-3 py-1 bg-red-50 rounded-full border border-red-100">
+                                    {sub.score} pts
+                                  </span>
+                                )}
+                                <span className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase ${
+                                  sub.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                                  sub.status === 'rejected' ? 'bg-red-100 text-red-700 border border-red-200' :
+                                  'bg-amber-100 text-amber-700 border border-amber-200'
+                                }`}>
+                                  {sub.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Judge Feedback Section */}
+                            {reviewFeedback ? (
+                              <div className="mt-4 pt-4 border-t border-borders/60 bg-[#FAF7F2] p-4 rounded-lg">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-primary-text uppercase tracking-wider">
+                                    <Star className="w-3.5 h-3.5 text-japan-red fill-japan-red" />
+                                    <span>Judge Feedback</span>
+                                  </div>
+                                  <span className="text-[11px] text-japan-red font-semibold group-hover:underline flex items-center gap-0.5">
+                                    View full review <ChevronRight className="w-3 h-3" />
+                                  </span>
+                                </div>
+                                <p className="text-xs text-secondary-text leading-relaxed whitespace-pre-wrap line-clamp-3">
+                                  {reviewFeedback}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="mt-4 pt-3 border-t border-borders/60 flex items-center justify-between text-xs text-secondary-text font-medium">
+                                <span className="flex items-center gap-1.5 text-amber-600">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  Awaiting review &amp; feedback from judges
+                                </span>
+                                <span className="text-japan-red font-semibold group-hover:underline flex items-center gap-0.5">
+                                  View details <ChevronRight className="w-3 h-3" />
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-8 text-center text-muted-text bg-card-bg border border-borders rounded-xl">No submissions yet for this task.</div>

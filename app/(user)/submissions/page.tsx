@@ -8,7 +8,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
-import { ExternalLink, Scroll } from 'lucide-react';
+import { ExternalLink, Scroll, Star, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 
 function NinjaStarIcon({ className }: { className?: string }) {
@@ -68,28 +68,50 @@ export default function SubmissionsPage() {
         <EmptyState icon="inbox" title="The scroll is empty" message="Complete a task to see your submissions here." actionLabel="Browse Tasks" onAction={() => window.location.href = '/tasks'} />
       ) : (
         <div className="space-y-4 stagger-fade max-w-5xl">
-          {submissions.map((sub) => (
-            <Link key={sub.id} href={`/submissions/${sub.id}`} className="block group">
-              <div className="flex items-center justify-between p-5 rounded-xl border border-borders bg-white shadow-sm group-hover:shadow-md group-hover:border-japan-red/40 transition-all">
-                <div className="min-w-0 flex-1 pr-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <NinjaStarIcon className="h-4 w-4 text-japan-red opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <p className="font-bold text-lg text-primary-text truncate group-hover:text-japan-red transition-colors">{sub.taskTitle || sub.repoName || 'Submission'}</p>
-                    <ExternalLink className="h-4 w-4 text-muted-text shrink-0 ml-2" />
+          {submissions.map((sub) => {
+            const reviewFeedback = sub.review?.feedback || sub.feedback;
+            return (
+              <Link key={sub.id} href={`/submissions/${sub.id}`} className="block group">
+                <div className="p-5 rounded-xl border border-borders bg-white shadow-sm group-hover:shadow-md group-hover:border-japan-red/40 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1 pr-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <NinjaStarIcon className="h-4 w-4 text-japan-red opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <p className="font-bold text-lg text-primary-text truncate group-hover:text-japan-red transition-colors">{sub.taskTitle || sub.repoName || 'Submission'}</p>
+                        <ExternalLink className="h-4 w-4 text-muted-text shrink-0 ml-2" />
+                      </div>
+                      <p className="text-sm text-secondary-text font-medium pl-6">
+                        {sub.repoUrl.replace('https://github.com/', '')} <span className="mx-2 text-borders">|</span> {new Date(sub.submittedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {sub.score !== undefined && sub.score !== null && (
+                        <span className="text-sm font-bold text-japan-red px-3 py-1 bg-red-50 rounded-full border border-red-100">{sub.score} pts</span>
+                      )}
+                      <StatusBadge status={sub.status} />
+                    </div>
                   </div>
-                  <p className="text-sm text-secondary-text font-medium pl-6">
-                    {sub.repoUrl.replace('https://github.com/', '')} <span className="mx-2 text-borders">|</span> {new Date(sub.submittedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-6">
-                  {sub.score !== undefined && sub.score !== null && (
-                    <span className="text-base font-bold text-japan-red px-3 py-1 bg-red-50 rounded-full">{sub.score} pts</span>
+
+                  {reviewFeedback && (
+                    <div className="mt-3 ml-6 pt-3 border-t border-borders/60 bg-[#FAF7F2] p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-primary-text uppercase tracking-wider">
+                          <Star className="w-3.5 h-3.5 text-japan-red fill-japan-red" />
+                          <span>Judge Feedback</span>
+                        </div>
+                        <span className="text-[11px] text-japan-red font-semibold group-hover:underline flex items-center gap-0.5">
+                          View details <ChevronRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                      <p className="text-xs text-secondary-text leading-relaxed whitespace-pre-wrap line-clamp-2">
+                        {reviewFeedback}
+                      </p>
+                    </div>
                   )}
-                  <StatusBadge status={sub.status} />
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
