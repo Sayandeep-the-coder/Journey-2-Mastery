@@ -30,7 +30,22 @@ function NinjaStarIcon({ className }: { className?: string }) {
   );
 }
 
-const avatars = ['/images/avatar-ronin.png', '/images/samurai.png', '/images/avatar-ronin.png'];
+const getAvatarForTask = (task: Task, index: number) => {
+  const rankAvatars: Record<string, string> = {
+    Ronin: '/ronin.png',
+    Kenshi: '/kenshi.png',
+    Samurai: '/samurai.png',
+    Shogun: '/shogun.png',
+  };
+  
+  if (task.rankRequired && rankAvatars[task.rankRequired]) {
+    return rankAvatars[task.rankRequired];
+  }
+  
+  const levelAvatars = ['/ronin.png', '/kenshi.png', '/samurai.png', '/shogun.png'];
+  return levelAvatars[index % levelAvatars.length];
+};
+
 const landscapes = ['/images/landscape-torii.png', '/images/landscape-temple.png'];
 
 export default function TasksPage() {
@@ -156,7 +171,7 @@ export default function TasksPage() {
       ) : (
         <div className="space-y-4 mt-6">
           {tasks.map((task, index) => {
-            const avatar = avatars[index % avatars.length];
+            const avatar = getAvatarForTask(task, index);
             const landscape = landscapes[index % landscapes.length];
             const isBlackBrush = index % 2 === 1;
 
