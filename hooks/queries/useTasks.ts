@@ -53,15 +53,7 @@ export function usePendingTasks() {
 export function useTaskCategories() {
   return useQuery<Category[], Error>({
     queryKey: ['tasks', 'categories'],
-    queryFn: async () => [
-      { id: 'Frontend', name: 'Frontend' },
-      { id: 'Backend', name: 'Backend' },
-      { id: 'Fullstack', name: 'Fullstack' },
-      { id: 'DSA', name: 'DSA' },
-      { id: 'System Design', name: 'System Design' },
-      { id: 'AI/ML', name: 'AI/ML' },
-      { id: 'DevOps', name: 'DevOps' },
-    ],
-    staleTime: Infinity,
+    queryFn: () => apiFetch<Category[]>('/user/tasks/categories'),
+    staleTime: 60 * 1000,
   });
 }

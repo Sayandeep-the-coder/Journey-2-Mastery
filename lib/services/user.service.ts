@@ -111,6 +111,20 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 }
 
 /**
+ * Get distinct categories available in tasks.
+ */
+export async function getTaskCategories() {
+  const result = await db
+    .select({ name: tasks.category })
+    .from(tasks)
+    .where(eq(tasks.isActive, true))
+    .groupBy(tasks.category)
+    .orderBy(asc(tasks.category));
+
+  return result.map(c => ({ id: c.name, name: c.name }));
+}
+
+/**
  * Get a single task by ID.
  */
 export async function getTaskById(taskId: string) {
