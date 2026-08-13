@@ -197,7 +197,10 @@ export default function UserDashboard() {
                 <div className="absolute left-0 top-0 bottom-0 w-2 bg-japan-red" />
                 <div className="flex flex-col md:flex-row items-center gap-8 pl-4">
                    <div className="w-32 h-32 rounded-full bg-white border border-borders shadow-sm shrink-0 overflow-hidden relative">
-                      <Image src="/images/avatar-ronin.png" alt="Ronin" fill className="object-contain p-2" />
+                      <Image src={(() => {
+                        const rankAvatars: Record<string, string> = { Ronin: '/ronin.png', Kenshi: '/kenshi.png', Samurai: '/samurai.png', Shogun: '/shogun.png' };
+                        return rankAvatars[currentRankName] || '/ronin.png';
+                      })()} alt={currentRankName} fill className="object-contain p-2" />
                    </div>
                    <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">

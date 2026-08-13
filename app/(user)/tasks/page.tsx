@@ -203,7 +203,7 @@ export default function TasksPage() {
                       
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
                         <Badge className="bg-[#FAF7F2] border-borders text-secondary-text font-medium px-2.5 py-0.5 rounded text-[11px] shadow-sm">
-                          Level {index + 1} • {task.categoryName || 'Beginner'}
+                          {task.rankRequired || 'Ronin'} • {task.category || 'General'}
                         </Badge>
                         <Badge variant="outline" className={cn("rounded-full px-3 py-0.5 text-[11px] capitalize", difficultyColors[task.difficulty])}>
                           {task.difficulty}

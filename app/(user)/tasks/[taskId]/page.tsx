@@ -110,8 +110,11 @@ export default function TaskDetailPage() {
             style={{ maskImage: 'linear-gradient(to right, transparent, black 40%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 40%)' }}
           >
             <Image 
-              src="/images/avatar-ronin.png" 
-              alt="Ronin Character" 
+              src={(() => {
+                const rankAvatars: Record<string, string> = { Ronin: '/ronin.png', Kenshi: '/kenshi.png', Samurai: '/samurai.png', Shogun: '/shogun.png' };
+                return (task.rankRequired && rankAvatars[task.rankRequired]) || '/ronin.png';
+              })()}
+              alt={`${task.rankRequired || 'Ronin'} Character`}
               fill 
               className="object-contain object-right scale-110" 
             />
