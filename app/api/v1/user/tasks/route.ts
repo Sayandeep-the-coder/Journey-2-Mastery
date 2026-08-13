@@ -4,7 +4,7 @@ import { apiHandler } from "@/lib/utils/apiHandler";
 import * as userService from "@/lib/services/user.service";
 import { taskFilterSchema } from "@/lib/validators/user.validator";
 
-export const GET = apiHandler(async (req: Request, { params }: { params: any }) => {
+export const GET = apiHandler(async (req: Request) => {
 
   const user = await requireAuth(req);
   const rawFilters = Object.fromEntries(new URL(req.url).searchParams);

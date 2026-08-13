@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
-import type { RepoInfo, User, UserBadge } from '@/types/api.types';
+import type { RepoInfo, User, UserBadge, RankConfig } from '@/types/api.types';
 
 export interface UserDashboardData {
   rank: string;
   totalScore: number;
   tasksCompleted: number;
   tasksAvailable: number;
-  ranksConfig?: any[];
+  ranksConfig?: RankConfig[];
 }
 
 export function useUserDashboard() {
