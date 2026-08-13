@@ -70,7 +70,6 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 
   const conditions = [
     eq(tasks.isActive, true),
-    inArray(tasks.rankRequired, getAvailableRanks(user.rank)),
   ];
 
   if (filters.category) {
