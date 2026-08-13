@@ -42,18 +42,23 @@ export default function UserDashboard() {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return <EmptyState message="Failed to load dashboard data." />;
 
-  const ranks = [
-    { name: 'Ronin', pts: 0, icon: Star, desc: 'Ronin is the first level of Journey to Mastery. You have no backend, no database, no auth. Just you, a browser, and a blank canvas.', diff: 'Easy' },
-    { name: 'Kenshi', pts: 100, icon: Trophy, desc: 'You have proven yourself worthy. Now you must master the fundamental structures of the web and components.', diff: 'Medium' },
-    { name: 'Samurai', pts: 200, icon: ListChecks, desc: 'A true warrior. You now wield the power of databases and servers with precision.', diff: 'Hard' },
-    { name: 'Shogun', pts: 300, icon: Star, desc: 'Master of the domain. Your architecture is flawless and your code is legendary.', diff: 'Master' },
-  ];
+  const ranksConfig = data?.ranksConfig || [];
 
   const currentRankName = user?.rank || 'Ronin';
-  const currentRankIndex = ranks.findIndex(r => r.name === currentRankName);
-  const currentRankData = ranks[currentRankIndex !== -1 ? currentRankIndex : 0];
-  const nextRank = currentRankIndex < ranks.length - 1 ? ranks[currentRankIndex + 1] : null;
-  const rankProgressPercent = currentRankIndex === -1 ? 0 : (currentRankIndex / (ranks.length - 1)) * 100;
+  const currentRankIndex = ranksConfig.findIndex((r: any) => r.name === currentRankName);
+  const currentRankData = ranksConfig[currentRankIndex !== -1 ? currentRankIndex : 0];
+  const nextRank = currentRankIndex < ranksConfig.length - 1 ? ranksConfig[currentRankIndex + 1] : null;
+  const rankProgressPercent = currentRankIndex === -1 ? 0 : (currentRankIndex / (ranksConfig.length - 1)) * 100;
+
+  const getRankIcon = (rankName: string) => {
+    switch (rankName) {
+      case 'Ronin': return Star;
+      case 'Kenshi': return Trophy;
+      case 'Samurai': return ListChecks;
+      case 'Shogun': return Star;
+      default: return Star;
+    }
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -90,7 +95,7 @@ export default function UserDashboard() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <p className="text-sm text-secondary-text">Complete tasks and earn points to level up.</p>
             <div className="flex items-center gap-4 text-xs font-bold text-muted-text uppercase tracking-wider">
-              <span>{currentRankIndex >= 0 ? ranks[currentRankIndex].pts : 0} / {ranks[Math.min(currentRankIndex + 1, ranks.length - 1)]?.pts || 5000} pts</span>
+              <span>{currentRankIndex >= 0 ? ranksConfig[currentRankIndex].pts : 0} / {ranksConfig[Math.min(currentRankIndex + 1, ranksConfig.length - 1)]?.pts || 5000} pts</span>
               <span>{Math.round(rankProgressPercent)}%</span>
             </div>
           </div>
@@ -103,9 +108,9 @@ export default function UserDashboard() {
             </div>
             
             <div className="relative flex justify-between z-10">
-              {ranks.map((rank, i) => {
+              {ranksConfig.map((rank: any, i: number) => {
                 const isActive = i <= currentRankIndex;
-                const Icon = rank.icon;
+                const Icon = getRankIcon(rank.name);
                 return (
                   <div key={rank.name} className="flex flex-col items-center w-24 shrink-0">
                     <div className={cn("w-12 h-12 rounded-full flex items-center justify-center border-4 transition-colors bg-white mb-3", isActive ? "border-japan-red text-japan-red shadow-sm" : "border-borders text-muted-text")}>
@@ -197,10 +202,7 @@ export default function UserDashboard() {
                 <div className="absolute left-0 top-0 bottom-0 w-2 bg-japan-red" />
                 <div className="flex flex-col md:flex-row items-center gap-8 pl-4">
                    <div className="w-32 h-32 rounded-full bg-white border border-borders shadow-sm shrink-0 overflow-hidden relative">
-                      <Image src={(() => {
-                        const rankAvatars: Record<string, string> = { Ronin: '/ronin.png', Kenshi: '/kenshi.png', Samurai: '/samurai.png', Shogun: '/shogun.png' };
-                        return rankAvatars[currentRankName] || '/ronin.png';
-                      })()} alt={currentRankName} fill className="object-contain p-2" />
+                      <Image src={`/${currentRankName.toLowerCase()}.png`} alt={currentRankName} fill className="object-contain p-2" />
                    </div>
                    <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">

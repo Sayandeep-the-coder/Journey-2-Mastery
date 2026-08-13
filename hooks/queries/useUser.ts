@@ -7,6 +7,7 @@ export interface UserDashboardData {
   totalScore: number;
   tasksCompleted: number;
   tasksAvailable: number;
+  ranksConfig?: any[];
 }
 
 export function useUserDashboard() {

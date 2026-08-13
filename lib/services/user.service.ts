@@ -45,11 +45,19 @@ export async function getDashboard(userId: string) {
     .innerJoin(submissions, eq(reviews.submissionId, submissions.id))
     .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved")));
 
+  const ranksConfig = [
+    { name: 'Ronin', pts: 0, desc: 'Ronin is the first level of Journey to Mastery. You have no backend, no database, no auth. Just you, a browser, and a blank canvas.', diff: 'Easy' },
+    { name: 'Kenshi', pts: 100, desc: 'You have proven yourself worthy. Now you must master the fundamental structures of the web and components.', diff: 'Medium' },
+    { name: 'Samurai', pts: 200, desc: 'A true warrior. You now wield the power of databases and servers with precision.', diff: 'Hard' },
+    { name: 'Shogun', pts: 300, desc: 'Master of the domain. Your architecture is flawless and your code is legendary.', diff: 'Master' },
+  ];
+
   return {
     rank: user.rank,
     totalScore: Number(scoreResult?.totalScore ?? 0),
     tasksCompleted: completedResult?.count ?? 0,
     tasksAvailable: (totalTasksResult?.count ?? 0) - (completedResult?.count ?? 0),
+    ranksConfig,
   };
 }
 
