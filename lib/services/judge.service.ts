@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql } from "drizzle-orm";
+import { eq, and, gt, asc, desc, count, sql, ilike } from "drizzle-orm";
 import { db } from "../db/client";
 import { users, submissions, reviews } from "../db/schema";
 import { env } from "../config/env";
@@ -102,12 +102,23 @@ export async function getAssignedSubmissions(
   judgeId: string,
   statusFilter?: string,
   cursor?: string,
-  limit = 20
+  limit = 20,
+  searchEmail?: string
 ) {
   const conditions = [eq(submissions.assignedJudgeId, judgeId)];
 
   if (statusFilter) {
     conditions.push(eq(submissions.status, statusFilter as "in_review" | "approved" | "rejected"));
+  }
+  if (searchEmail && searchEmail.trim()) {
+    const clean = searchEmail.trim();
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${users}
+        WHERE ${users.id} = ${submissions.userId}
+          AND ${users.email} ILIKE ${`%${clean}%`}
+      )`
+    );
   }
   if (cursor) {
     conditions.push(gt(submissions.id, cursor));
@@ -117,7 +128,7 @@ export async function getAssignedSubmissions(
     where: and(...conditions),
     with: {
       task: true,
-      user: { columns: { id: true, username: true, avatarUrl: true } },
+      user: { columns: { id: true, username: true, email: true, avatarUrl: true } },
       review: true,
     },
     orderBy: [asc(submissions.submittedAt)],
@@ -133,6 +144,7 @@ export async function getAssignedSubmissions(
     taskTitle: s.task?.title,
     userId: s.userId,
     userName: s.user?.username,
+    userEmail: s.user?.email ?? null,
     repoId: s.repoId,
     repoUrl: s.repoUrl,
     repoName: s.repoName,
@@ -361,8 +373,19 @@ export async function editReview(
   return enrichReviewWithScores(updated)!;
 }
 
-export async function getReviews(judgeId: string, cursor?: string, limit = 20) {
+export async function getReviews(judgeId: string, cursor?: string, limit = 20, searchEmail?: string) {
   const conditions = [eq(reviews.judgeId, judgeId)];
+  if (searchEmail && searchEmail.trim()) {
+    const clean = searchEmail.trim();
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${submissions}
+        INNER JOIN ${users} ON ${users.id} = ${submissions.userId}
+        WHERE ${submissions.id} = ${reviews.submissionId}
+          AND ${users.email} ILIKE ${`%${clean}%`}
+      )`
+    );
+  }
   if (cursor) conditions.push(gt(reviews.id, cursor));
 
   const result = await db.query.reviews.findMany({
@@ -371,7 +394,7 @@ export async function getReviews(judgeId: string, cursor?: string, limit = 20) {
       submission: {
         with: {
           task: { columns: { id: true, title: true, category: true } },
-          user: { columns: { id: true, username: true } },
+          user: { columns: { id: true, username: true, email: true, fullName: true } },
         },
       },
     },
@@ -383,7 +406,17 @@ export async function getReviews(judgeId: string, cursor?: string, limit = 20) {
   const items = hasMore ? result.slice(0, limit) : result;
 
   return {
-    items: items.map((r) => enrichReviewWithScores(r)!),
+    items: items.map((r) => {
+      const enriched = enrichReviewWithScores(r)!;
+      const subUser = (r as any).submission?.user;
+      const subTask = (r as any).submission?.task;
+      return {
+        ...enriched,
+        userEmail: subUser?.email ?? null,
+        userName: (subUser?.fullName || subUser?.username) ?? null,
+        taskTitle: subTask?.title ?? null,
+      };
+    }),
     meta: {
       nextCursor: hasMore && items[items.length - 1] ? items[items.length - 1]!.id : null,
       limit,

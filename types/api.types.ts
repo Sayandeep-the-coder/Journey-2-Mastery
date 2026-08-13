@@ -83,6 +83,7 @@ export interface Submission {
   taskTitle?: string;
   userId: string;
   userName?: string;
+  userEmail?: string;
   repoUrl: string;
   repoName?: string;
   status: SubmissionStatus;
@@ -101,6 +102,16 @@ export interface Review {
   submissionId: string;
   judgeId: string;
   judgeName?: string;
+  userEmail?: string;
+  userName?: string;
+  taskTitle?: string;
+  submission?: {
+    id?: string;
+    taskId?: string;
+    taskTitle?: string;
+    task?: { id: string; title: string; category?: string };
+    user?: { id: string; username: string; email?: string; fullName?: string };
+  };
   scores: CriterionScore[];
   totalScore: number;
   feedback: string;
