@@ -119,12 +119,12 @@ export default function Levels() {
   }, []);
 
   return (
-    <section id="levels" ref={containerRef} className="py-32 bg-(--color-off-white) relative z-20">
-      <div className="max-w-360 w-full mx-auto px-12 md:px-24">
+    <section id="levels" ref={containerRef} className="py-20 md:py-32 bg-(--color-off-white) relative z-20">
+      <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24">
         
         {/* Section Title */}
-        <div className="text-center mb-24 flex flex-col items-center">
-          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest whitespace-nowrap overflow-hidden">
+        <div className="text-center mb-16 md:mb-24 flex flex-col items-center">
+          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest px-4 md:px-0" style={{ clipPath: "inset(0 100% 0 0)" }}>
             THE 4 LEVELS OF <span className="text-(--color-japan-red)">MASTERY</span>
           </h2>
           <div className="w-12 h-0.5 bg-(--color-japan-red) mt-8"></div>

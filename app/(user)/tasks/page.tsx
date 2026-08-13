@@ -30,7 +30,22 @@ function NinjaStarIcon({ className }: { className?: string }) {
   );
 }
 
-const avatars = ['/images/avatar-ronin.png', '/images/samurai.png', '/images/avatar-ronin.png'];
+const getAvatarForTask = (task: Task, index: number) => {
+  const rankAvatars: Record<string, string> = {
+    Ronin: '/ronin.png',
+    Kenshi: '/kenshi.png',
+    Samurai: '/samurai.png',
+    Shogun: '/shogun.png',
+  };
+  
+  if (task.rankRequired && rankAvatars[task.rankRequired]) {
+    return rankAvatars[task.rankRequired];
+  }
+  
+  const levelAvatars = ['/ronin.png', '/kenshi.png', '/samurai.png', '/shogun.png'];
+  return levelAvatars[index % levelAvatars.length];
+};
+
 const landscapes = ['/images/landscape-torii.png', '/images/landscape-temple.png'];
 
 export default function TasksPage() {
@@ -156,7 +171,7 @@ export default function TasksPage() {
       ) : (
         <div className="space-y-4 mt-6">
           {tasks.map((task, index) => {
-            const avatar = avatars[index % avatars.length];
+            const avatar = getAvatarForTask(task, index);
             const landscape = landscapes[index % landscapes.length];
             const isBlackBrush = index % 2 === 1;
 
@@ -188,7 +203,7 @@ export default function TasksPage() {
                       
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
                         <Badge className="bg-[#FAF7F2] border-borders text-secondary-text font-medium px-2.5 py-0.5 rounded text-[11px] shadow-sm">
-                          Level {index + 1} • {task.categoryName || 'Beginner'}
+                          {task.rankRequired || 'Ronin'} • {task.category || 'General'}
                         </Badge>
                         <Badge variant="outline" className={cn("rounded-full px-3 py-0.5 text-[11px] capitalize", difficultyColors[task.difficulty])}>
                           {task.difficulty}

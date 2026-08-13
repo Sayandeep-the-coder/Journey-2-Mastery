@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from "uuid";
 import { env } from "../config/env";
 import { badRequest, AppError } from "../utils/apiError";
 import { logger } from "../logger";
-import path from "path";
 
 // Initialize S3 Client if configured
 let s3Client: S3Client | null = null;
@@ -38,8 +37,25 @@ export async function uploadFile(
     throw badRequest("S3 Upload is not configured on this server");
   }
 
+  // File Upload Safety checks
+  const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    throw badRequest(`Invalid file type. Allowed types: ${ALLOWED_MIME_TYPES.join(", ")}`);
+  }
+
+  if (fileBuffer.length > MAX_FILE_SIZE) {
+    throw badRequest("File exceeds the maximum limit of 5MB");
+  }
+
   try {
-    const ext = path.extname(originalName) || ".bin";
+    // Derive extension from mime type instead of original name to prevent extension spoofing
+    const ext = mimeType === "image/jpeg" ? ".jpg" : 
+                mimeType === "image/png" ? ".png" :
+                mimeType === "image/webp" ? ".webp" :
+                mimeType === "image/gif" ? ".gif" : ".bin";
+
     const filename = `${folder}/${uuidv4()}${ext}`;
 
     const command = new PutObjectCommand({

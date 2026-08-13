@@ -3,6 +3,7 @@
 import { useTaskDetail } from '@/hooks/queries/useTasks';
 import { useSubmissions, useCreateSubmission } from '@/hooks/queries/useSubmissions';
 import { useGithubRepos } from '@/hooks/queries/useUser';
+import { useSession } from '@/hooks/useSession';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -26,10 +27,16 @@ export default function TaskDetailPage() {
   const submitMutation = useCreateSubmission();
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('details');
+  const { data: user } = useSession();
 
   const isSubmitted = submissions?.some((sub) => sub.taskId === taskId && sub.status !== 'rejected');
   
   const selectedRepo = repos?.find((r) => r.repoId === selectedRepoId);
+  
+  const RANK_ORDER = ['Ronin', 'Kenshi', 'Samurai', 'Shogun'];
+  const userRankIdx = RANK_ORDER.indexOf(user?.rank || 'Ronin');
+  const taskRankIdx = RANK_ORDER.indexOf(task?.rankRequired || 'Ronin');
+  const userHasRank = userRankIdx >= taskRankIdx;
 
   const handleSubmit = () => {
     if (!selectedRepo || isSubmitted) return;
@@ -110,8 +117,11 @@ export default function TaskDetailPage() {
             style={{ maskImage: 'linear-gradient(to right, transparent, black 40%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 40%)' }}
           >
             <Image 
-              src="/images/avatar-ronin.png" 
-              alt="Ronin Character" 
+              src={(() => {
+                const rankAvatars: Record<string, string> = { Ronin: '/ronin.png', Kenshi: '/kenshi.png', Samurai: '/samurai.png', Shogun: '/shogun.png' };
+                return (task.rankRequired && rankAvatars[task.rankRequired]) || '/ronin.png';
+              })()}
+              alt={`${task.rankRequired || 'Ronin'} Character`}
               fill 
               className="object-contain object-right scale-110" 
             />
@@ -253,14 +263,15 @@ export default function TaskDetailPage() {
                       {/* Custom brush button for submit */}
                       <button 
                         onClick={handleSubmit}
-                        disabled={isSubmitted || !selectedRepo || submitMutation.isPending}
+                        disabled={isSubmitted || !selectedRepo || submitMutation.isPending || !userHasRank}
+                        title={!userHasRank ? `Requires rank: ${task.rankRequired}` : ''}
                         className="relative px-10 py-3 group w-full md:w-auto overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="absolute inset-0 bg-[#C8473D] rounded-[4px] group-hover:bg-[#B93A32] transition-colors"></div>
                         <div className="absolute -inset-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnPjxmaWx0ZXIgaWQ9J24nPjxmZVR1cmJ1bGVuY2UgdHlwZT0nZnJhY3RhbE5vaXNlJyBiYXNlRnJlcXVlbmN5PScwLjknIG51bU9jdGF2ZXM9JzMnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
                         <div className="absolute inset-0 border-[3px] border-transparent opacity-80" style={{borderImageSource: "url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5,5 L95,5 L95,95 L5,95 Z\" fill=\"none\" stroke=\"%238A2722\" stroke-width=\"4\" stroke-dasharray=\"20 5\" stroke-dashoffset=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>')", borderImageSlice: "10", borderImageRepeat: "stretch"}}></div>
                         <div className="relative flex items-center justify-center gap-2 text-white font-bold tracking-widest text-sm z-10 drop-shadow-md">
-                          {isSubmitted ? 'SUBMITTED' : submitMutation.isPending ? 'SUBMITTING...' : 'SUBMIT FOR REVIEW'}
+                          {!userHasRank ? 'LOCKED' : isSubmitted ? 'SUBMITTED' : submitMutation.isPending ? 'SUBMITTING...' : 'SUBMIT FOR REVIEW'}
                           <span>&gt;</span>
                         </div>
                       </button>

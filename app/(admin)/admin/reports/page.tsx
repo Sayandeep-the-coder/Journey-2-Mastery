@@ -11,11 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { FileBarChart, Search, Download } from 'lucide-react';
-import { apiDownloadUrl } from '@/lib/api-client';
+import { csvDownload } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export default function AdminReportsPage() {
   const [actor, setActor] = useState('');
   const [action, setAction] = useState('');
+  const [exportingSubmissions, setExportingSubmissions] = useState(false);
+  const [exportingUsers, setExportingUsers] = useState(false);
   const { data: logs, isLoading, isError, error, refetch } = useAuditLog({
     actor: actor || undefined,
     action: action || undefined,
@@ -24,6 +27,30 @@ export default function AdminReportsPage() {
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
+  const handleExportSubmissions = async () => {
+    setExportingSubmissions(true);
+    try {
+      await csvDownload('/admin/reports/submissions', 'submissions.csv');
+      toast.success('Submissions CSV exported');
+    } catch (err: any) {
+      toast.error(err.message || 'Export failed');
+    } finally {
+      setExportingSubmissions(false);
+    }
+  };
+
+  const handleExportUsers = async () => {
+    setExportingUsers(true);
+    try {
+      await csvDownload('/admin/reports/users', 'users.csv');
+      toast.success('Users CSV exported');
+    } catch (err: any) {
+      toast.error(err.message || 'Export failed');
+    } finally {
+      setExportingUsers(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -31,12 +58,12 @@ export default function AdminReportsPage() {
           <FileBarChart className="h-7 w-7 text-japan-red" />Reports & Audit Log
         </h1>
         <div className="flex gap-2">
-          <a href={apiDownloadUrl('/admin/reports/submissions')} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" />Submissions CSV</Button>
-          </a>
-          <a href={apiDownloadUrl('/admin/reports/users')} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" />Users CSV</Button>
-          </a>
+          <Button variant="outline" size="sm" onClick={handleExportSubmissions} disabled={exportingSubmissions} className="cursor-pointer">
+            <Download className="h-4 w-4 mr-1" />{exportingSubmissions ? 'Exporting...' : 'Submissions CSV'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportUsers} disabled={exportingUsers} className="cursor-pointer">
+            <Download className="h-4 w-4 mr-1" />{exportingUsers ? 'Exporting...' : 'Users CSV'}
+          </Button>
         </div>
       </div>
 

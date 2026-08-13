@@ -18,7 +18,7 @@ export const completeProfileSchema = z.object({
   discord: z.string().max(100).optional().default(""),
   instagram: z.string().max(100).optional().default(""),
   twitter: z.string().max(100).optional().default(""),
-});
+}).strict();
 
 export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
 
@@ -27,6 +27,6 @@ export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
  */
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, "Refresh token is required"),
-});
+}).strict();
 
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

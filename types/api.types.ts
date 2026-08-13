@@ -188,6 +188,13 @@ export interface RepoInfo {
   stargazersCount?: number;
 }
 
+export interface RankConfig {
+  name: string;
+  pts: number;
+  desc: string;
+  diff: string;
+}
+
 // ─── Dashboard Data ───
 export interface UserDashboardData {
   rank: Rank;
@@ -197,6 +204,7 @@ export interface UserDashboardData {
   totalScore: number;
   rankProgress: number; // 0-100 percentage to next rank
   recentActivity: ActivityItem[];
+  ranksConfig?: RankConfig[];
   stats: {
     totalPoints: number;
     tasksCompleted: number;

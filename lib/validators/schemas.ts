@@ -11,7 +11,7 @@ export const completeProfileSchema = z.object({
   discord: z.string().max(100).optional().default(''),
   instagram: z.string().max(100).optional().default(''),
   twitter: z.string().max(100).optional().default(''),
-});
+}).strict();
 export type CompleteProfileForm = z.infer<typeof completeProfileSchema>;
 
 // ─── Profile Update ───
@@ -25,7 +25,7 @@ export const updateProfileSchema = z.object({
   discord: z.string().max(100).optional(),
   instagram: z.string().max(100).optional(),
   twitter: z.string().max(100).optional(),
-});
+}).strict();
 export type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
 
 // ─── Task Management (Admin) ───
@@ -40,7 +40,7 @@ export const taskSchema = z.object({
   bonusPoints: z.coerce.number().min(0).default(0),
   rankRequired: z.enum(['Ronin', 'Kenshi', 'Samurai', 'Shogun']).optional(),
   deadline: z.string().optional(),
-});
+}).strict();
 export type TaskForm = z.infer<typeof taskSchema>;
 
 // ─── Review Submission (Judge) ───
@@ -50,7 +50,7 @@ export const reviewSchema = z.object({
     score: z.coerce.number().min(0),
   })).min(1, 'At least one criterion score is required'),
   feedback: z.string().min(10, 'Feedback must be at least 10 characters').max(2000),
-});
+}).strict();
 export type ReviewForm = z.infer<typeof reviewSchema>;
 
 // ─── Post Creation (Admin) ───
@@ -59,7 +59,7 @@ export const postSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   imageUrl: z.string().url().optional().or(z.literal('')),
   isPublished: z.boolean().default(false),
-});
+}).strict();
 export type PostForm = z.infer<typeof postSchema>;
 
 // ─── Settings ───
@@ -68,18 +68,18 @@ export const settingsSchema = z.object({
   submissionUpdates: z.boolean(),
   reviewNotifications: z.boolean(),
   leaderboardUpdates: z.boolean(),
-});
+}).strict();
 export type SettingsForm = z.infer<typeof settingsSchema>;
 
 // ─── Comment ───
 export const commentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty').max(1000),
-});
+}).strict();
 export type CommentForm = z.infer<typeof commentSchema>;
 
 // ─── Override Review (Admin) ───
 export const overrideReviewSchema = z.object({
   score: z.coerce.number().min(0),
   reason: z.string().min(10, 'A reason is required when overriding a score').max(500),
-});
+}).strict();
 export type OverrideReviewForm = z.infer<typeof overrideReviewSchema>;

@@ -34,7 +34,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-[var(--color-off-white)] pt-24 pb-12 border-t border-[var(--color-borders)] relative z-20">
-      <div className="max-w-[1440px] w-full mx-auto px-12 md:px-24 flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
+      <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-24 flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
         
         {/* Left: Brand */}
         <div className="flex flex-col items-center md:items-start">

@@ -1,24 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { useSettings, useUpdateSettings, useDeleteAccount } from '@/hooks/queries/useSettings';
+
+import { useSettings, useUpdateSettings } from '@/hooks/queries/useSettings';
 import { useSessions, useRevokeSession } from '@/hooks/queries/useSettings';
-import { useLogout, useSession } from '@/hooks/useSession';
+import { useSession } from '@/hooks/useSession';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import RankBadge from '@/components/shared/RankBadge';
-import { Settings as SettingsIcon, Monitor, Trash2, AlertTriangle, Award, School } from 'lucide-react';
-import { toast } from 'sonner';
+import { Settings as SettingsIcon, Monitor, School } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+
 
 function NinjaStarIcon({ className }: { className?: string }) {
   return (
@@ -34,10 +33,7 @@ export default function SettingsPage() {
   const { data: user } = useSession();
   const updateSettings = useUpdateSettings();
   const revokeSession = useRevokeSession();
-  const deleteAccount = useDeleteAccount();
-  const logout = useLogout();
 
-  const [deleteConfirm, setDeleteConfirm] = useState('');
 
   if (settingsLoading) return <LoadingSkeleton variant="form" />;
   if (settingsError) return <ErrorState error={settingsErr} onRetry={refetchSettings} />;
@@ -45,15 +41,6 @@ export default function SettingsPage() {
   const handleToggle = (key: keyof NonNullable<typeof settings>, value: boolean) => {
     if (!settings) return;
     updateSettings.mutate({ [key]: value });
-  };
-
-  const handleDeleteAccount = () => {
-    deleteAccount.mutate(undefined, {
-      onSuccess: () => {
-        toast.success('Account deleted');
-        logout.mutate();
-      },
-    });
   };
 
   return (
@@ -186,7 +173,7 @@ export default function SettingsPage() {
                       <School className="h-4 w-4 text-indigo-500 opacity-70" />
                       Institution
                     </span>
-                    <span className="font-bold text-right text-primary-text truncate max-w-[150px]">
+                    <span className="font-bold text-right text-primary-text truncate max-w-37.5">
                       {user.collegeName}
                     </span>
                   </div>
@@ -197,28 +184,6 @@ export default function SettingsPage() {
 
               <Button variant="outline" className="w-full font-bold border-borders hover:bg-secondary-bg cursor-pointer" asChild>
                 <Link href="/profile">View Full Profile</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Danger Zone */}
-          <Card className="border-red-200 bg-red-50/30 shadow-sm">
-            <CardHeader className="border-b border-borders/50 bg-transparent">
-              <CardTitle className="text-red-600 flex items-center gap-2 font-bold uppercase tracking-wider text-sm">
-                <AlertTriangle className="h-5 w-5" /> Danger Zone
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 p-6">
-              <p className="text-sm text-secondary-text leading-relaxed">
-                Once you delete your account, there is no going back. This action is <strong className="text-red-600 font-bold">permanent</strong> and will destroy your legacy.
-              </p>
-              <div className="space-y-2">
-                <Label className="text-sm font-bold">Type <strong className="text-red-600">DELETE</strong> to confirm</Label>
-                <Input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder="DELETE" className="h-10 text-base border-red-200 focus-visible:ring-red-500" />
-              </div>
-              <Button variant="destructive" className="w-full h-10 font-bold cursor-pointer bg-red-600 hover:bg-red-700 text-white" disabled={deleteConfirm !== 'DELETE' || deleteAccount.isPending} onClick={handleDeleteAccount}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                {deleteAccount.isPending ? 'Deleting...' : 'Delete Account'}
               </Button>
             </CardContent>
           </Card>
