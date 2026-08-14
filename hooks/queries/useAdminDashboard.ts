@@ -206,10 +206,10 @@ export function useAssignJudge() {
 export function useOverrideReview() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ reviewId, score, reason }: { reviewId: string; score: number; reason: string }) =>
+    mutationFn: ({ reviewId, totalScore, scores, feedback }: { reviewId: string; totalScore?: number; scores?: { criterionId: string; score: number }[]; feedback: string }) =>
       apiFetch(`/admin/reviews/${reviewId}/override`, {
         method: 'PATCH',
-        body: JSON.stringify({ score, reason }),
+        body: JSON.stringify({ totalScore, scores, feedback }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'submissions'] });

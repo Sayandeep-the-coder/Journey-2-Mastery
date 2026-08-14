@@ -504,6 +504,15 @@ export async function overrideReview(
 
   const updateData: Record<string, unknown> = {};
   if (data.totalScore !== undefined) updateData.totalScore = data.totalScore;
+  
+  if (data.scores) {
+    updateData.scoreBreakdown = data.scores.reduce((acc, s) => {
+      acc[s.criterionId] = s.score;
+      return acc;
+    }, {} as Record<string, number>);
+    updateData.totalScore = data.scores.reduce((sum, s) => sum + s.score, 0);
+  }
+
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
 
   let updated = review;
