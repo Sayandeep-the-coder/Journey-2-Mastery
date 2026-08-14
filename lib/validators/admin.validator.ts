@@ -72,7 +72,7 @@ export type ManualAssignInput = z.infer<typeof manualAssignSchema>;
 export const overrideReviewSchema = z.object({
   totalScore: z.number().int().min(0).max(100).optional(),
   scores: z.array(z.object({
-    criterionId: z.string().uuid(),
+    criterionId: z.string(),
     score: z.number().int().min(0)
   })).optional(),
   feedback: z.string().max(5000).optional(),
