@@ -174,13 +174,16 @@ export default function AdminTasksPage() {
       ) : (
         <div className="border border-borders rounded-lg overflow-hidden">
           <Table>
-            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Status</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {tasks.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell><Link href={`/admin/tasks/${t.id}`} className="text-sm font-medium text-primary-text hover:text-japan-red">{t.title}</Link></TableCell>
                   <TableCell><Badge variant="outline" className={diffColors[t.difficulty]}>{t.difficulty}</Badge></TableCell>
                   <TableCell className="font-semibold text-japan-red">{t.points}</TableCell>
+                  <TableCell>
+                    {t.isActive ? <Badge variant="default" className="bg-green-600 hover:bg-green-700">Visible</Badge> : <Badge variant="secondary" className="text-muted-foreground">Hidden</Badge>}
+                  </TableCell>
                   <TableCell>
                     {t.deadline ? <Badge variant="outline">{new Date(t.deadline).toLocaleDateString()}</Badge> : <Badge variant="secondary">No deadline</Badge>}
                   </TableCell>

@@ -227,8 +227,8 @@ export async function toggleAllTasks(adminId: string, isActive: boolean) {
     actorId: adminId,
     action: AUDIT_ACTIONS.TASK_UPDATED,
     targetType: "system",
-    targetId: "all_tasks",
-    metadata: { isActive, count: result.length },
+    targetId: adminId, // Must be a valid UUID
+    metadata: { isActive, count: result.length, scope: "all_tasks" },
   });
 
   return result.length;
