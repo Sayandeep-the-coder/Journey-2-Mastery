@@ -287,13 +287,14 @@ export async function deleteTask(adminId: string, taskId: string) {
 // ──────────────────────────────────────────────
 
 export async function getAllSubmissions(
-  filters: { status?: string; cursor?: string; limit?: number } = {}
+  filters: { status?: string; judgeId?: string; cursor?: string; limit?: number } = {}
 ) {
   const limit = filters.limit ?? 20;
   const conditions = [];
 
   if (filters.status)
     conditions.push(eq(submissions.status, filters.status as "pending" | "in_review" | "approved" | "rejected"));
+  if (filters.judgeId) conditions.push(eq(submissions.assignedJudgeId, filters.judgeId));
   if (filters.cursor) conditions.push(gt(submissions.id, filters.cursor));
 
   const result = await db.query.submissions.findMany({

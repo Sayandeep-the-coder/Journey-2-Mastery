@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type {
   AdminDashboardData, AdminActivity, AdminUser, User,
@@ -36,6 +36,7 @@ export function useAdminUsers(filters?: { role?: string; rank?: string; search?:
     queryKey: ['admin', 'users', filters],
     queryFn: () => apiFetch<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -163,17 +164,19 @@ export function useDeleteTask() {
 }
 
 // ─── Submissions ───
-export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string }) {
+export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string; judgeId?: string }) {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
   if (filters?.taskId) params.set('taskId', filters.taskId);
   if (filters?.userId) params.set('userId', filters.userId);
+  if (filters?.judgeId) params.set('judgeId', filters.judgeId);
   const qs = params.toString();
 
   return useQuery<Submission[], Error>({
     queryKey: ['admin', 'submissions', filters],
     queryFn: () => apiFetch<Submission[]>(`/admin/submissions${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -149,38 +149,82 @@ export default function UserDashboard() {
           </CardContent>
         </Card>
 
-        {/* Bento Tile 2: Continue Journey Card (Span 4) */}
+        {/* Bento Tile 2: Continue Journey OR Congratulations Card (Span 4) */}
         <Card className="md:col-span-4 rounded-3xl border-borders shadow-xs bg-white/80 overflow-hidden relative flex flex-col justify-between hover:shadow-md transition-all duration-300">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-japan-red" />
           <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
-                  {currentRankData.diff || 'Active'}
-                </span>
-                <span className="text-xs font-bold text-secondary-text font-serif">
-                  {nextRank ? `${nextRank.pts} pts goal` : 'Top Rank'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 my-3">
-                <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
-                  <Image src={`/${currentRankName.toLowerCase()}.png`} alt={currentRankName} fill className="object-contain p-2" />
-                </div>
+            {(data.tasksAvailable ?? 0) === 0 ? (
+              /* All Tasks Completed / Victory State */
+              <>
                 <div>
-                  <h3 className="font-serif text-2xl font-bold text-primary-text">{currentRankData.name}</h3>
-                  <p className="text-xs text-muted-text mt-1 line-clamp-2">{currentRankData.desc}</p>
-                </div>
-              </div>
-            </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-200">
+                      🎉 Victory
+                    </span>
+                    <span className="text-xs font-bold text-japan-red font-serif">
+                      All Tasks Completed!
+                    </span>
+                  </div>
 
-            <div className="pt-6 border-t border-borders/50 mt-4">
-              <Link href="/tasks" className="block w-full">
-                <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
-                  View Available Tasks <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
-            </div>
+                  <div className="flex items-center gap-4 my-3">
+                    <div className="w-20 h-20 rounded-2xl bg-amber-50 border border-amber-200 shadow-xs shrink-0 overflow-hidden relative flex items-center justify-center text-amber-600">
+                      <Trophy className="w-10 h-10 animate-bounce" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">Congratulations!</h3>
+                      <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                        You have completed all available tasks in Journey to Mastery. Check the Hall of Masters for your rank!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-borders/50 mt-4">
+                  <Link href="/leaderboard" className="block w-full">
+                    <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
+                      View Leaderboard <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              </>
+            ) : (
+              /* Tasks Available / Next Goal State */
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
+                      {nextRank?.diff || currentRankData.diff || 'Active'}
+                    </span>
+                    <span className="text-xs font-bold text-secondary-text font-serif">
+                      {nextRank ? `${nextRank.pts} pts goal` : 'Active Goal'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 my-3">
+                    <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
+                      <Image 
+                        src={`/${(nextRank?.name || currentRankName).toLowerCase()}.png`} 
+                        alt={nextRank?.name || currentRankName} 
+                        fill 
+                        className="object-contain p-2" 
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">{nextRank?.name || currentRankData.name}</h3>
+                      <p className="text-xs text-muted-text mt-1 line-clamp-2">{nextRank?.desc || currentRankData.desc}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-borders/50 mt-4">
+                  <Link href="/tasks" className="block w-full">
+                    <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
+                      View Available Tasks ({data.tasksAvailable}) <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

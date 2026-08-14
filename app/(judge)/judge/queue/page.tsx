@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useJudgeQueue } from '@/hooks/queries/useJudgeQueue';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
@@ -14,7 +15,8 @@ import Link from 'next/link';
 
 export default function JudgeQueuePage() {
   const [searchEmail, setSearchEmail] = useState('');
-  const { data: submissions, isLoading, isError, error, refetch } = useJudgeQueue(undefined, searchEmail);
+  const debouncedSearchEmail = useDebounce(searchEmail, 500);
+  const { data: submissions, isLoading, isError, error, refetch } = useJudgeQueue(undefined, debouncedSearchEmail);
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;

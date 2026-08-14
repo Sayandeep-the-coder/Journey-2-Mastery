@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { JudgeDashboardData, JudgeWorkload, Submission, Review, ReviewCriterion } from '@/types/api.types';
 
@@ -28,6 +28,7 @@ export function useJudgeQueue(status?: string, email?: string) {
     queryKey: ['judge', 'queue', status, email],
     queryFn: () => apiFetch<Submission[]>(`/judge/submissions${params}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -73,6 +74,7 @@ export function useJudgeReviews(email?: string) {
     queryKey: ['judge', 'reviews', email],
     queryFn: () => apiFetch<Review[]>(`/judge/reviews${params}`),
     staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 

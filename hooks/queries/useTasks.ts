@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { Task, Category, Submission } from '@/types/api.types';
 
@@ -22,6 +22,7 @@ export function useTasks(filters?: TaskFilters) {
     queryKey: ['user', 'tasks', filters],
     queryFn: () => apiFetch<Task[]>(`/user/tasks${buildTaskQuery(filters)}`),
     staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
