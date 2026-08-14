@@ -131,6 +131,18 @@ export function useAdminTasks() {
   });
 }
 
+export function useToggleAllTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (isActive: boolean) =>
+      apiFetch<{ count: number }>('/admin/tasks/toggle-all', { method: 'POST', body: JSON.stringify({ isActive }) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // also invalidate user-facing tasks
+    },
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({

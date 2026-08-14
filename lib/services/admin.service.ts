@@ -220,6 +220,20 @@ export async function createTask(adminId: string, data: CreateTaskInput) {
   return task!;
 }
 
+export async function toggleAllTasks(adminId: string, isActive: boolean) {
+  const result = await db.update(tasks).set({ isActive }).returning({ id: tasks.id });
+  
+  await db.insert(auditLog).values({
+    actorId: adminId,
+    action: AUDIT_ACTIONS.TASK_UPDATED,
+    targetType: "system",
+    targetId: "all_tasks",
+    metadata: { isActive, count: result.length },
+  });
+
+  return result.length;
+}
+
 export async function getAllTasks(cursor?: string, limit = 20) {
   const conditions = [];
   if (cursor) conditions.push(gt(tasks.id, cursor));
