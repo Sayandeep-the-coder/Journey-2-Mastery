@@ -164,12 +164,13 @@ export function useDeleteTask() {
 }
 
 // ─── Submissions ───
-export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string; judgeId?: string }) {
+export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string; judgeId?: string; search?: string }) {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
   if (filters?.taskId) params.set('taskId', filters.taskId);
   if (filters?.userId) params.set('userId', filters.userId);
   if (filters?.judgeId) params.set('judgeId', filters.judgeId);
+  if (filters?.search) params.set('search', filters.search);
   const qs = params.toString();
 
   return useQuery<Submission[], Error>({

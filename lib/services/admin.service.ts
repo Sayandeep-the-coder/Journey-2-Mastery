@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql, ilike, or } from "drizzle-orm";
+import { eq, and, gt, asc, desc, count, sql, ilike, or, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   users,
@@ -288,7 +288,7 @@ export async function deleteTask(adminId: string, taskId: string) {
 // ──────────────────────────────────────────────
 
 export async function getAllSubmissions(
-  filters: { status?: string; judgeId?: string; cursor?: string; limit?: number } = {}
+  filters: { status?: string; judgeId?: string; search?: string; cursor?: string; limit?: number } = {}
 ) {
   const limit = filters.limit ?? 20;
   const conditions = [];
@@ -296,6 +296,14 @@ export async function getAllSubmissions(
   if (filters.status)
     conditions.push(eq(submissions.status, filters.status as "pending" | "in_review" | "approved" | "rejected"));
   if (filters.judgeId) conditions.push(eq(submissions.assignedJudgeId, filters.judgeId));
+  if (filters.search) {
+    conditions.push(
+      inArray(
+        submissions.userId,
+        db.select({ id: users.id }).from(users).where(or(ilike(users.username, `%${filters.search}%`), ilike(users.email, `%${filters.search}%`)))
+      )
+    );
+  }
   if (filters.cursor) conditions.push(gt(submissions.id, filters.cursor));
 
   const result = await db.query.submissions.findMany({

@@ -7,9 +7,10 @@ export const GET = apiHandler(async (req: Request) => {
 
   const status = new URL(req.url).searchParams.get("status") || undefined;
   const judgeId = new URL(req.url).searchParams.get("judgeId") || undefined;
+  const search = new URL(req.url).searchParams.get("search") || undefined;
   const cursor = new URL(req.url).searchParams.get("cursor") || undefined;
   const limit = parseInt(new URL(req.url).searchParams.get("limit") || "20", 10);
-  const result = await adminService.getAllSubmissions({ status, judgeId, cursor, limit });
+  const result = await adminService.getAllSubmissions({ status, judgeId, search, cursor, limit });
   return NextResponse.json({ success: true, data: result.items, meta: result.meta });
 
 });
