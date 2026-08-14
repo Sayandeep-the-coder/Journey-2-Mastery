@@ -8,7 +8,7 @@ import RankBadge from '@/components/shared/RankBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, Crown, Medal, Swords } from 'lucide-react';
+import { Trophy, Crown, Medal, Swords, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -28,7 +28,7 @@ export default function LeaderboardPage() {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-16">
       
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-card-bg border border-borders px-8 py-12 md:py-16 shadow-sm">
@@ -46,49 +46,72 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* Top 3 podium */}
+      {/* Compact Top 3 podium */}
       {entries && entries.length >= 3 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end mt-12 max-w-4xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mt-8 max-w-5xl mx-auto px-4">
           {[entries[1], entries[0], entries[2]].map((entry, i) => {
             const position = i === 0 ? 2 : i === 1 ? 1 : 3;
-            const heights = ['h-[280px]', 'h-[340px]', 'h-[250px]'];
-            const colors = [
-              'bg-[#E6E8FA] border-[#C0C0C0]', // Silver
-              'bg-[#FFF5D1] border-[#FFD700]', // Gold
-              'bg-[#F5E6D3] border-[#CD7F32]'  // Bronze
+            
+            // Unified theme gradients for the medals/accents
+            const rankGradients = [
+              'from-slate-200 to-slate-400 shadow-slate-300/50', // Silver
+              'from-yellow-300 to-amber-500 shadow-amber-400/50', // Gold
+              'from-orange-300 to-orange-600 shadow-orange-500/50'  // Bronze
             ];
-            const textColors = ['text-[#707070]', 'text-[#B8860B]', 'text-[#8B4513]'];
+            
+            const borderColors = [
+              'border-slate-300',
+              'border-amber-400',
+              'border-orange-400'
+            ];
+            
             const Icons = [Medal, Crown, Swords];
             const PosIcon = Icons[i];
 
             return (
-              <div key={entry.userId} className={cn('relative flex flex-col items-center justify-end group', position === 1 ? 'z-10 -translate-y-4 md:-translate-y-8' : 'z-0')}>
-                <div className="mb-6 flex flex-col items-center">
-                  <div className="relative">
-                    <Avatar className={cn("border-4 shadow-xl transition-transform duration-500 group-hover:scale-110", position === 1 ? "h-28 w-28 border-[#FFD700]" : "h-20 w-20 border-white")}>
-                      {entry.avatarUrl && <AvatarImage src={entry.avatarUrl} />}
-                      <AvatarFallback className="text-2xl">{entry.userName?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    {position === 1 && (
-                      <div className="absolute -top-6 -right-4 text-[#FFD700] drop-shadow-lg">
-                        <Crown className="w-10 h-10 fill-current animate-bounce" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="font-bold text-lg text-primary-text truncate w-full mt-4 text-center">{entry.userName}</p>
-                  <div className="flex items-center gap-1 mt-1 bg-white px-3 py-1 rounded-full shadow-sm border border-borders">
-                     <NinjaStarIcon className="w-3 h-3 text-japan-red" />
-                     <span className="text-sm font-bold text-japan-red">{entry.score} pts</span>
+              <div key={entry.userId} className={cn(
+                'relative flex items-center p-4 rounded-2xl bg-white/60 backdrop-blur-md border border-borders shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 group',
+                position === 1 ? 'md:-translate-y-4 shadow-md ring-2 ring-amber-400/20' : ''
+              )}>
+                
+                {/* Rank Badge */}
+                <div className={cn(
+                  "absolute -top-3 -left-3 flex items-center justify-center rounded-full bg-gradient-to-br border-2 border-white shadow-sm z-20",
+                  rankGradients[i],
+                  position === 1 ? "w-10 h-10" : "w-8 h-8"
+                )}>
+                  <PosIcon className="w-4 h-4 text-white drop-shadow-sm" />
+                </div>
+                
+                {/* Avatar */}
+                <div className="relative mr-4 shrink-0">
+                  {position === 1 && (
+                    <div className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
+                  )}
+                  <Avatar className={cn(
+                    "border-2 shadow-sm relative z-10", 
+                    borderColors[i],
+                    position === 1 ? "h-16 w-16" : "h-14 w-14"
+                  )}>
+                    {entry.avatarUrl && <AvatarImage src={entry.avatarUrl} />}
+                    <AvatarFallback className="text-xl font-serif font-bold text-japan-red">{entry.userName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+                
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-lg text-primary-text truncate group-hover:text-japan-red transition-colors">{entry.userName}</p>
+                  <div className="flex items-center gap-1.5 mt-1 text-sm font-bold text-primary-text">
+                     <NinjaStarIcon className="w-3.5 h-3.5 text-japan-red" />
+                     {entry.score} <span className="text-muted-text font-medium">pts</span>
                   </div>
                 </div>
                 
-                <Card className={cn('w-full border-t-8 rounded-t-2xl rounded-b-none shadow-lg overflow-hidden transition-all duration-300', heights[i], colors[i])}>
-                  <CardContent className="p-0 h-full flex flex-col items-center justify-start pt-8 relative">
-                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{ backgroundImage: 'radial-gradient(circle at center, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: 'black' }} />
-                    <PosIcon className={cn("w-16 h-16 opacity-20 mb-4", textColors[i])} />
-                    <span className={cn("text-7xl font-bold opacity-30 font-serif", textColors[i])}>#{position}</span>
-                  </CardContent>
-                </Card>
+                {/* Large Background Rank Number */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.08] pointer-events-none">
+                  <span className="text-7xl font-black font-serif italic">{position}</span>
+                </div>
+                
               </div>
             );
           })}
@@ -96,25 +119,26 @@ export default function LeaderboardPage() {
       )}
 
       {/* Full Table */}
-      <Card className="border-borders shadow-sm bg-white/80 overflow-hidden mt-8">
-        <CardHeader className="border-b border-borders/50 bg-card-bg flex flex-row items-center justify-between py-4 px-6">
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <Swords className="w-5 h-5 text-japan-red" />
-            Global Rankings
+      <Card className="border-borders shadow-lg bg-card-bg overflow-hidden mt-12 rounded-2xl">
+        <CardHeader className="border-b border-borders/50 bg-secondary-bg/30 flex flex-row items-center justify-between py-6 px-8">
+          <CardTitle className="font-serif text-2xl flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-japan-red" />
+            Hall of Masters
           </CardTitle>
-          <div className="px-3 py-1 bg-japan-red/10 text-japan-red rounded-full text-xs font-bold uppercase tracking-wider">
-            {entries?.length || 0} Warriors
+          <div className="px-4 py-1.5 bg-white border border-borders text-primary-text shadow-sm rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            {entries?.length || 0} Ranked Warriors
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-secondary-bg/50">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-20 text-center font-bold">Rank</TableHead>
-                <TableHead className="font-bold">Warrior</TableHead>
-                <TableHead className="font-bold">Title</TableHead>
-                <TableHead className="text-right font-bold">Honor Points</TableHead>
-                <TableHead className="text-right font-bold">Tasks</TableHead>
+            <TableHeader className="bg-secondary-bg/20">
+              <TableRow className="hover:bg-transparent border-borders/50">
+                <TableHead className="w-24 text-center font-bold text-muted-text">Rank</TableHead>
+                <TableHead className="font-bold text-muted-text">Warrior</TableHead>
+                <TableHead className="font-bold text-muted-text">Current Title</TableHead>
+                <TableHead className="text-right font-bold text-muted-text">Honor Points</TableHead>
+                <TableHead className="text-right font-bold text-muted-text">Tasks</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,46 +146,56 @@ export default function LeaderboardPage() {
                 <TableRow
                   key={entry.userId}
                   className={cn(
-                    "transition-colors",
-                    currentUser?.id === entry.userId ? 'bg-japan-red/5 border-l-4 border-l-japan-red shadow-[inset_0_0_20px_rgba(185,58,50,0.05)]' : 'hover:bg-secondary-bg/50'
+                    "transition-all duration-300 border-borders/50 group cursor-default",
+                    currentUser?.id === entry.userId 
+                      ? 'bg-japan-red/[0.03] border-l-4 border-l-japan-red hover:bg-japan-red/[0.05]' 
+                      : 'hover:bg-secondary-bg/40'
                   )}
                 >
-                  <TableCell className="font-bold text-center">
+                  <TableCell className="font-bold text-center py-4">
                     {entry.rank <= 3 ? (
                       <span className={cn(
-                        "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold",
-                        entry.rank === 1 ? "bg-gradient-to-br from-[#FFD700] to-[#DAA520] shadow-md" :
-                        entry.rank === 2 ? "bg-gradient-to-br from-[#C0C0C0] to-[#A9A9A9] shadow-md" :
-                        "bg-gradient-to-br from-[#CD7F32] to-[#8B4513] shadow-md"
+                        "inline-flex items-center justify-center w-10 h-10 rounded-full text-white font-black text-lg shadow-lg group-hover:scale-110 transition-transform",
+                        entry.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-amber-600 ring-4 ring-amber-100" :
+                        entry.rank === 2 ? "bg-gradient-to-br from-slate-200 to-slate-500 ring-4 ring-slate-100" :
+                        "bg-gradient-to-br from-orange-300 to-orange-700 ring-4 ring-orange-100"
                       )}>
                         {entry.rank}
                       </span>
                     ) : (
-                      <span className="text-muted-text font-serif text-lg">#{entry.rank}</span>
+                      <span className="text-muted-text font-serif text-xl font-bold group-hover:text-primary-text transition-colors">#{entry.rank}</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className={cn("h-10 w-10 border-2", currentUser?.id === entry.userId ? 'border-japan-red' : 'border-borders')}>
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className={cn(
+                        "h-12 w-12 border-2 shadow-sm group-hover:shadow-md transition-shadow", 
+                        currentUser?.id === entry.userId ? 'border-japan-red' : 'border-borders'
+                      )}>
                         {entry.avatarUrl && <AvatarImage src={entry.avatarUrl} />}
-                        <AvatarFallback className="font-bold">{entry.userName?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="font-serif font-bold text-lg">{entry.userName?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className={cn('text-sm', currentUser?.id === entry.userId ? 'font-bold text-japan-red' : 'font-semibold text-primary-text')}>
+                        <span className={cn(
+                          'text-base', 
+                          currentUser?.id === entry.userId ? 'font-bold text-japan-red' : 'font-bold text-primary-text'
+                        )}>
                           {entry.userName}
                         </span>
-                        {currentUser?.id === entry.userId && <span className="text-[10px] text-japan-red/80 uppercase tracking-wider font-bold">You</span>}
+                        {currentUser?.id === entry.userId && (
+                          <span className="text-[10px] text-japan-red uppercase tracking-widest font-black mt-0.5">You</span>
+                        )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell><RankBadge rank={entry.userRank} size="sm" /></TableCell>
-                  <TableCell className="text-right font-bold text-primary-text">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <NinjaStarIcon className="w-4 h-4 text-japan-red opacity-70" />
+                  <TableCell className="py-4"><RankBadge rank={entry.userRank} size="sm" /></TableCell>
+                  <TableCell className="text-right font-black text-lg text-primary-text py-4">
+                    <div className="flex items-center justify-end gap-2 group-hover:scale-105 transition-transform origin-right">
+                      <NinjaStarIcon className="w-5 h-5 text-japan-red" />
                       {entry.score}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right text-muted-text font-medium">{entry.tasksCompleted}</TableCell>
+                  <TableCell className="text-right text-muted-text font-semibold py-4 text-base">{entry.tasksCompleted}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
