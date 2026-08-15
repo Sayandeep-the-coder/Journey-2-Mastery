@@ -60,35 +60,37 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[var(--color-off-white)] pt-24 pb-12 border-t border-[var(--color-borders)] relative z-20">
-      <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-24 flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
+    <footer className="bg-(--color-off-white) pt-24 pb-12 border-t border-(--color-borders) relative z-20">
+      <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24">
         
-        {/* Left: Brand */}
-        <div className="flex flex-col items-center md:items-start">
-          <a href="https://dc.kgec.tech/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 mb-6 group">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-sm border border-[var(--color-borders)] group-hover:border-[var(--color-japan-red)] transition-colors">
-              <img src="/logo.jpg" alt="Dev Community Logo" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex flex-col ml-1">
-              <span className="text-[10px] leading-none tracking-[0.2em] text-[var(--color-secondary-text)] mb-1 uppercase group-hover:text-[var(--color-japan-red)] transition-colors">Dev</span>
-              <span className="font-onari text-2xl leading-none tracking-widest text-[var(--color-japan-red)] font-normal uppercase">Community</span>
-            </div>
-          </a>
-          <p className="text-[var(--color-secondary-text)] text-sm max-w-xs text-center md:text-left">
-            Empowering developers to build, launch, and impact the world.
-          </p>
-        </div>
-
+        {/* Main Footer Content */}
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 lg:gap-8 pb-16 border-b border-(--color-borders)">
+          
+          {/* Col 1: Brand */}
+          <div className="lg:col-span-4 flex flex-col items-center md:items-start">
+            <a href="https://dc.kgec.tech/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 mb-6 group">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-sm border border-(--color-borders) group-hover:border-(--color-japan-red) transition-colors">
+                <img src="/logo.jpg" alt="Dev Community Logo" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col ml-1">
+                <span className="text-[10px] leading-none tracking-[0.2em] text-(--color-secondary-text) mb-1 uppercase group-hover:text-(--color-japan-red) transition-colors">Dev</span>
+                <span className="font-onari text-2xl leading-none tracking-widest text-(--color-japan-red) font-normal uppercase">Community</span>
+              </div>
+            </a>
+            <p className="text-(--color-secondary-text) text-sm max-w-xs text-center md:text-left mb-6">
+              Empowering developers to build, launch, and impact the world.
+            </p>
+            
             {/* Seal Stamp */}
             <div 
               ref={sealRef}
               className="flex items-center gap-3 mt-2"
             >
-              <div className="border-2 border-[var(--color-dark-red)] p-1.5 w-12 h-12 flex items-center justify-center text-[var(--color-dark-red)] rounded-sm bg-white shadow-2xs">
+              <div className="border-2 border-(--color-dark-red) p-1.5 w-12 h-12 flex items-center justify-center text-(--color-dark-red) rounded-sm bg-white shadow-2xs">
                 <span className="font-heading text-sm text-center leading-tight">魂<br/>決</span>
               </div>
-              <div className="text-[10px] text-[var(--color-secondary-text)] leading-tight">
-                <span className="font-bold text-[var(--color-primary-text)] uppercase block">Dojo Seal</span>
+              <div className="text-[10px] text-(--color-secondary-text) leading-tight">
+                <span className="font-bold text-(--color-primary-text) uppercase block">Dojo Seal</span>
                 Forged for builders
               </div>
             </div>
@@ -98,16 +100,16 @@ export default function Footer() {
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-12 w-full">
             {/* Col 2: Program */}
             <div className="col-span-1">
-              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
                 <span>Program</span>
-                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
               </h4>
               <ul className="flex flex-col gap-3">
               {footerLinks.program.map(item => (
                 <li key={item.label}>
                   <a
                     href={item.href}
-                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors inline-flex items-center gap-1 group"
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors inline-flex items-center gap-1 group"
                   >
                     <span>{item.label}</span>
                   </a>
@@ -118,9 +120,9 @@ export default function Footer() {
 
             {/* Col 3: Community */}
             <div className="col-span-1">
-              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
                 <span>Community</span>
-                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
               </h4>
               <ul className="flex flex-col gap-3">
               {footerLinks.community.map(item => (
@@ -129,7 +131,7 @@ export default function Footer() {
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors inline-flex items-center gap-1 group"
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors inline-flex items-center gap-1 group"
                   >
                     <span>{item.label}</span>
                     {item.external && (
@@ -143,16 +145,16 @@ export default function Footer() {
 
             {/* Col 4: Resources */}
             <div className="col-span-2 sm:col-span-1">
-              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
                 <span>Resources</span>
-                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
               </h4>
               <ul className="flex flex-col gap-3">
               {footerLinks.resources.map(item => (
                 <li key={item.label}>
                   <a
                     href={item.href}
-                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors"
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors"
                   >
                     {item.label}
                   </a>
@@ -164,10 +166,10 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar: Copyright & Socials */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-[var(--color-secondary-text)]">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-(--color-secondary-text)">
           <p className="flex items-center gap-1 text-center sm:text-left">
             <span>&copy; {new Date().getFullYear()} Journey to Mastery. Built with</span>
-            <Heart className="w-3.5 h-3.5 text-[var(--color-japan-red)] fill-current inline" />
+            <Heart className="w-3.5 h-3.5 text-(--color-japan-red) fill-current inline" />
             <span>by Dev Community.</span>
           </p>
 
@@ -177,7 +179,7 @@ export default function Footer() {
               href="https://x.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
               aria-label="X (Twitter)"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -189,7 +191,7 @@ export default function Footer() {
               href="https://github.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
               aria-label="GitHub"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -201,7 +203,7 @@ export default function Footer() {
               href="https://linkedin.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
               aria-label="LinkedIn"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -210,7 +212,6 @@ export default function Footer() {
             </a>
           </div>
         </div>
-
       </div>
     </footer>
   );
