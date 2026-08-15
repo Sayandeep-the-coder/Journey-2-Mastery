@@ -106,14 +106,14 @@ export default function Hero() {
         ref={welcomeRef}
         className="absolute inset-0 z-50 flex items-center justify-center bg-(--color-off-white)"
       >
-        <h1 className="font-heading text-3xl md:text-5xl tracking-widest text-(--color-primary-text) font-light">
+        <h1 className="font-heading text-2xl md:text-5xl tracking-widest text-(--color-primary-text) font-light px-4 text-center">
           Are you ready for your <span className="font-onari font-normal tracking-normal text-(--color-japan-red)">Journey to Mastery</span>?
         </h1>
       </div>
 
       <Sakura />
 
-      <div className="max-w-360 w-full mx-auto px-12 md:px-24 h-full flex pt-24 pb-12 relative z-10">
+      <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 h-full flex pt-24 pb-12 relative z-10">
         
         {/* Left: Text Content (45%) */}
         <div ref={heroContentRef} className="w-full md:w-[45%] h-full flex flex-col justify-center opacity-0">
@@ -121,7 +121,7 @@ export default function Hero() {
             JOURNEY TO
           </p>
           
-          <h1 className="font-heading text-6xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
+          <h1 className="font-heading text-5xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
             {"MASTERY".split("").map((char, i) => (
               <span 
                 key={i} 

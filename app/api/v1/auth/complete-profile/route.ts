@@ -28,4 +28,4 @@ export const POST = apiHandler(async (req: Request) => {
     refreshToken: tokens.refreshToken,
   } }, { status: 201 });
 
-});
+}, { rateLimitType: 'auth' });

@@ -32,7 +32,14 @@ export type UpdateSubmissionInput = z.infer<typeof updateSubmissionSchema>;
 export const updateProfileSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
   avatarUrl: z.string().url().optional(),
+  collegeName: z.string().min(2).max(200).optional(),
+  branch: z.string().min(2).max(100).optional(),
+  year: z.string().optional(),
+  phone: z.string().optional(),
   bio: z.string().max(500).optional(),
+  discord: z.string().max(100).optional(),
+  instagram: z.string().max(100).optional(),
+  twitter: z.string().max(100).optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -19,6 +19,9 @@ export interface User {
   year?: string;
   phone?: string;
   bio?: string;
+  discord?: string | null;
+  instagram?: string | null;
+  twitter?: string | null;
   rank: Rank;
   score: number;
   currentTeamId?: string | null;
@@ -40,6 +43,9 @@ export interface CompleteProfilePayload {
   year: string;
   phone: string;
   bio: string;
+  discord?: string;
+  instagram?: string;
+  twitter?: string;
 }
 
 // ─── Tasks ───
@@ -77,6 +83,7 @@ export interface Submission {
   taskTitle?: string;
   userId: string;
   userName?: string;
+  userEmail?: string;
   repoUrl: string;
   repoName?: string;
   status: SubmissionStatus;
@@ -95,6 +102,16 @@ export interface Review {
   submissionId: string;
   judgeId: string;
   judgeName?: string;
+  userEmail?: string;
+  userName?: string;
+  taskTitle?: string;
+  submission?: {
+    id?: string;
+    taskId?: string;
+    taskTitle?: string;
+    task?: { id: string; title: string; category?: string };
+    user?: { id: string; username: string; email?: string; fullName?: string };
+  };
   scores: CriterionScore[];
   totalScore: number;
   feedback: string;
@@ -182,6 +199,13 @@ export interface RepoInfo {
   stargazersCount?: number;
 }
 
+export interface RankConfig {
+  name: string;
+  pts: number;
+  desc: string;
+  diff: string;
+}
+
 // ─── Dashboard Data ───
 export interface UserDashboardData {
   rank: Rank;
@@ -191,6 +215,7 @@ export interface UserDashboardData {
   totalScore: number;
   rankProgress: number; // 0-100 percentage to next rank
   recentActivity: ActivityItem[];
+  ranksConfig?: RankConfig[];
   stats: {
     totalPoints: number;
     tasksCompleted: number;

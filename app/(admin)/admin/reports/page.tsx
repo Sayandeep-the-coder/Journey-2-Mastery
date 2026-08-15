@@ -2,27 +2,56 @@
 
 import { useState } from 'react';
 import { useAuditLog } from '@/hooks/queries/useAuditLog';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { FileBarChart, Search, Download } from 'lucide-react';
-import { apiDownloadUrl } from '@/lib/api-client';
+import { csvDownload } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export default function AdminReportsPage() {
   const [actor, setActor] = useState('');
+  const debouncedActor = useDebounce(actor, 500);
   const [action, setAction] = useState('');
+  const [exportingSubmissions, setExportingSubmissions] = useState(false);
+  const [exportingUsers, setExportingUsers] = useState(false);
   const { data: logs, isLoading, isError, error, refetch } = useAuditLog({
-    actor: actor || undefined,
+    actor: debouncedActor || undefined,
     action: action || undefined,
   });
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
+
+  const handleExportSubmissions = async () => {
+    setExportingSubmissions(true);
+    try {
+      await csvDownload('/admin/reports/submissions', 'submissions.csv');
+      toast.success('Submissions CSV exported');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExportingSubmissions(false);
+    }
+  };
+
+  const handleExportUsers = async () => {
+    setExportingUsers(true);
+    try {
+      await csvDownload('/admin/reports/users', 'users.csv');
+      toast.success('Users CSV exported');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExportingUsers(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -31,12 +60,12 @@ export default function AdminReportsPage() {
           <FileBarChart className="h-7 w-7 text-japan-red" />Reports & Audit Log
         </h1>
         <div className="flex gap-2">
-          <a href={apiDownloadUrl('/admin/reports/submissions')} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" />Submissions CSV</Button>
-          </a>
-          <a href={apiDownloadUrl('/admin/reports/users')} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" />Users CSV</Button>
-          </a>
+          <Button variant="outline" size="sm" onClick={handleExportSubmissions} disabled={exportingSubmissions} className="cursor-pointer">
+            <Download className="h-4 w-4 mr-1" />{exportingSubmissions ? 'Exporting...' : 'Submissions CSV'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportUsers} disabled={exportingUsers} className="cursor-pointer">
+            <Download className="h-4 w-4 mr-1" />{exportingUsers ? 'Exporting...' : 'Users CSV'}
+          </Button>
         </div>
       </div>
 

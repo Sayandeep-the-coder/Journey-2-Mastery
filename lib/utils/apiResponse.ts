@@ -1,5 +1,4 @@
-import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { NextResponse } from "next/server";
 
 /**
  * Standard success response envelope.
@@ -32,40 +31,39 @@ export interface PaginationMeta {
 /**
  * Send a success response with consistent envelope.
  */
-export function success<T>(c: Context, data: T, meta?: PaginationMeta, status: ContentfulStatusCode = 200) {
+export function success<T>(data: T, meta?: PaginationMeta, status: number = 200) {
   const body: SuccessResponse<T> = { success: true, data };
   if (meta) {
     body.meta = meta;
   }
-  return c.json(body, status);
+  return NextResponse.json(body, { status });
 }
 
 /**
  * Send a 201 Created response.
  */
-export function created<T>(c: Context, data: T) {
-  return success(c, data, undefined, 201);
+export function created<T>(data: T) {
+  return success(data, undefined, 201);
 }
 
 /**
  * Send a 202 Accepted response (async jobs).
  */
-export function accepted<T>(c: Context, data: T) {
-  return success(c, data, undefined, 202);
+export function accepted<T>(data: T) {
+  return success(data, undefined, 202);
 }
 
 /**
  * Send an error response with consistent envelope.
  */
 export function error(
-  c: Context,
   code: string,
   message: string,
-  status: ContentfulStatusCode = 400
+  status: number = 400
 ) {
   const body: ErrorResponse = {
     success: false,
     error: { code, message },
   };
-  return c.json(body, status);
+  return NextResponse.json(body, { status });
 }

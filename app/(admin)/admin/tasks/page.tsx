@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAdminTasks, useCreateTask, useDeleteTask } from '@/hooks/queries/useAdminDashboard';
+import { useAdminTasks, useCreateTask, useDeleteTask, useToggleAllTasks } from '@/hooks/queries/useAdminDashboard';
 import { useTaskCategories } from '@/hooks/queries/useTasks';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Trash2, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,6 +28,7 @@ export default function AdminTasksPage() {
   const { data: categories } = useTaskCategories();
   const createTask = useCreateTask();
   const deleteTask = useDeleteTask();
+  const toggleAllTasks = useToggleAllTasks();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,12 +63,27 @@ export default function AdminTasksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="font-serif text-3xl font-bold text-primary-text">Tasks</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Create Task</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-md shadow-sm border border-border">
+            <EyeOff className="h-4 w-4 text-muted-text" />
+            <Label htmlFor="hide-tasks-switch" className="text-sm font-medium cursor-pointer">Hide All Tasks</Label>
+            <Switch 
+              id="hide-tasks-switch"
+              checked={tasks?.every(t => !t.isActive) ?? false}
+              onCheckedChange={(checked) => {
+                toggleAllTasks.mutate(!checked, {
+                  onSuccess: () => toast.success(checked ? 'All tasks are now hidden' : 'All tasks are now visible')
+                });
+              }}
+              disabled={toggleAllTasks.isPending || !tasks || tasks.length === 0}
+            />
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" />Create Task</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
             <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4">
@@ -149,6 +166,7 @@ export default function AdminTasksPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {!tasks || tasks.length === 0 ? (
@@ -156,13 +174,16 @@ export default function AdminTasksPage() {
       ) : (
         <div className="border border-borders rounded-lg overflow-hidden">
           <Table>
-            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Status</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {tasks.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell><Link href={`/admin/tasks/${t.id}`} className="text-sm font-medium text-primary-text hover:text-japan-red">{t.title}</Link></TableCell>
                   <TableCell><Badge variant="outline" className={diffColors[t.difficulty]}>{t.difficulty}</Badge></TableCell>
                   <TableCell className="font-semibold text-japan-red">{t.points}</TableCell>
+                  <TableCell>
+                    {t.isActive ? <Badge variant="default" className="bg-green-600 hover:bg-green-700">Visible</Badge> : <Badge variant="secondary" className="text-muted-foreground">Hidden</Badge>}
+                  </TableCell>
                   <TableCell>
                     {t.deadline ? <Badge variant="outline">{new Date(t.deadline).toLocaleDateString()}</Badge> : <Badge variant="secondary">No deadline</Badge>}
                   </TableCell>

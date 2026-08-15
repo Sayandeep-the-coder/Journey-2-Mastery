@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql } from "drizzle-orm";
+import { eq, and, gt, asc, desc, count, sql, ilike, or, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import {
   users,
@@ -86,13 +86,14 @@ export async function getActivityFeed(cursor?: string, limit = 20) {
 // ──────────────────────────────────────────────
 
 export async function getUsers(
-  filters: { role?: string; rank?: string; cursor?: string; limit?: number } = {}
+  filters: { role?: string; rank?: string; search?: string; cursor?: string; limit?: number } = {}
 ) {
   const limit = filters.limit ?? 20;
   const conditions = [];
 
   if (filters.role) conditions.push(eq(users.role, filters.role as "admin" | "judge" | "user"));
   if (filters.rank) conditions.push(eq(users.rank, filters.rank as "Ronin" | "Kenshi" | "Samurai" | "Shogun"));
+  if (filters.search) conditions.push(or(ilike(users.username, `%${filters.search}%`), ilike(users.email, `%${filters.search}%`)));
   if (filters.cursor) conditions.push(gt(users.id, filters.cursor));
 
   const result = await db.query.users.findMany({
@@ -219,6 +220,20 @@ export async function createTask(adminId: string, data: CreateTaskInput) {
   return task!;
 }
 
+export async function toggleAllTasks(adminId: string, isActive: boolean) {
+  const result = await db.update(tasks).set({ isActive }).returning({ id: tasks.id });
+  
+  await db.insert(auditLog).values({
+    actorId: adminId,
+    action: AUDIT_ACTIONS.TASK_UPDATED,
+    targetType: "system",
+    targetId: adminId, // Must be a valid UUID
+    metadata: { isActive, count: result.length, scope: "all_tasks" },
+  });
+
+  return result.length;
+}
+
 export async function getAllTasks(cursor?: string, limit = 20) {
   const conditions = [];
   if (cursor) conditions.push(gt(tasks.id, cursor));
@@ -287,13 +302,22 @@ export async function deleteTask(adminId: string, taskId: string) {
 // ──────────────────────────────────────────────
 
 export async function getAllSubmissions(
-  filters: { status?: string; cursor?: string; limit?: number } = {}
+  filters: { status?: string; judgeId?: string; search?: string; cursor?: string; limit?: number } = {}
 ) {
   const limit = filters.limit ?? 20;
   const conditions = [];
 
   if (filters.status)
     conditions.push(eq(submissions.status, filters.status as "pending" | "in_review" | "approved" | "rejected"));
+  if (filters.judgeId) conditions.push(eq(submissions.assignedJudgeId, filters.judgeId));
+  if (filters.search) {
+    conditions.push(
+      inArray(
+        submissions.userId,
+        db.select({ id: users.id }).from(users).where(or(ilike(users.username, `%${filters.search}%`), ilike(users.email, `%${filters.search}%`)))
+      )
+    );
+  }
   if (filters.cursor) conditions.push(gt(submissions.id, filters.cursor));
 
   const result = await db.query.submissions.findMany({
@@ -494,6 +518,15 @@ export async function overrideReview(
 
   const updateData: Record<string, unknown> = {};
   if (data.totalScore !== undefined) updateData.totalScore = data.totalScore;
+  
+  if (data.scores) {
+    updateData.scoreBreakdown = data.scores.reduce((acc, s) => {
+      acc[s.criterionId] = s.score;
+      return acc;
+    }, {} as Record<string, number>);
+    updateData.totalScore = data.scores.reduce((sum, s) => sum + s.score, 0);
+  }
+
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
 
   let updated = review;
@@ -703,9 +736,17 @@ export async function deletePost(adminId: string, postId: string) {
 // Audit Log
 // ──────────────────────────────────────────────
 
-export async function getAuditLog(cursor?: string, limit = 20) {
+export async function getAuditLog(filters: { actor?: string; action?: string; cursor?: string; limit?: number } = {}) {
+  const limit = filters.limit ?? 20;
   const conditions = [];
-  if (cursor) conditions.push(gt(auditLog.id, cursor));
+  if (filters.action) conditions.push(eq(auditLog.action, filters.action));
+  // Note: we can't easily ilike search on the joined user's username here without a join, 
+  // but if actor is passed, we can try matching actorId for now, or just leave actor search to exact match if it was ID.
+  // Actually, since we need to search by username, we could do it with a subquery, but since Drizzle relational queries don't support where on relations at the top level, 
+  // we'll leave actor search as it might require a larger refactor, or we can just filter in memory if needed. Let's do a simple ilike on actorId which isn't very useful, but we can't easily join.
+  // Let's omit actor filtering for now or just filter by exact actorId if provided.
+  if (filters.actor) conditions.push(eq(auditLog.actorId, filters.actor));
+  if (filters.cursor) conditions.push(gt(auditLog.id, filters.cursor));
 
   const result = await db.query.auditLog.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,

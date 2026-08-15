@@ -41,7 +41,10 @@ export default function ProfilePage() {
     collegeName: '',
     branch: '',
     year: '',
-    bio: ''
+    bio: '',
+    discord: '',
+    instagram: '',
+    twitter: '',
   });
 
   if (isLoading) return <LoadingSkeleton variant="detail" />;
@@ -55,7 +58,10 @@ export default function ProfilePage() {
       collegeName: displayUser.collegeName || '',
       branch: displayUser.branch || '',
       year: displayUser.year || '',
-      bio: displayUser.bio || ''
+      bio: displayUser.bio || '',
+      discord: displayUser.discord || '',
+      instagram: displayUser.instagram || '',
+      twitter: displayUser.twitter || '',
     });
     setEditing(true);
   };
@@ -247,7 +253,10 @@ export default function ProfilePage() {
                     <div className="space-y-2"><Label>Phone</Label><Input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} /></div>
                     <div className="space-y-2"><Label>College</Label><Input value={formData.collegeName} onChange={e=>setFormData({...formData, collegeName: e.target.value})} /></div>
                     <div className="space-y-2"><Label>Branch</Label><Input value={formData.branch} onChange={e=>setFormData({...formData, branch: e.target.value})} /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label>Year</Label><Input value={formData.year} onChange={e=>setFormData({...formData, year: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Year</Label><Input value={formData.year} onChange={e=>setFormData({...formData, year: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Discord Username</Label><Input value={formData.discord} onChange={e=>setFormData({...formData, discord: e.target.value})} placeholder="yourusername" /></div>
+                    <div className="space-y-2"><Label>Instagram Handle</Label><Input value={formData.instagram} onChange={e=>setFormData({...formData, instagram: e.target.value})} placeholder="@handle" /></div>
+                    <div className="space-y-2"><Label>Twitter (X) Handle</Label><Input value={formData.twitter} onChange={e=>setFormData({...formData, twitter: e.target.value})} placeholder="@handle" /></div>
                   </div>
                   <div className="space-y-2"><Label>Bio</Label><Textarea value={formData.bio} onChange={e=>setFormData({...formData, bio: e.target.value})} rows={3} /></div>
                   <Button onClick={saveEdit} disabled={updateProfile.isPending} className="w-full bg-japan-red hover:bg-dark-red text-white">
@@ -262,6 +271,9 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-text"/> Year</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.year || '-'}</span></div>
                   <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Mail className="h-4 w-4 text-muted-text"/> Email</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.email || '-'}</span></div>
                   <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Phone className="h-4 w-4 text-muted-text"/> Phone</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.phone || '-'}</span></div>
+                  <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><MessageSquare className="h-4 w-4 text-muted-text"/> Discord</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.discord || '-'}</span></div>
+                  <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Globe className="h-4 w-4 text-muted-text"/> Instagram</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.instagram || '-'}</span></div>
+                  <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Globe className="h-4 w-4 text-muted-text"/> Twitter (X)</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.twitter || '-'}</span></div>
                   <div className="grid grid-cols-3 items-start"><span className="text-sm font-medium text-secondary-text flex items-center gap-2 pt-0.5"><FileText className="h-4 w-4 text-muted-text"/> Bio</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.bio || '-'}</span></div>
                   <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><GithubIcon className="h-4 w-4 text-muted-text"/> GitHub ID</span><span className="col-span-2 text-sm font-semibold text-primary-text">{displayUser.githubId || '-'}</span></div>
                   <div className="grid grid-cols-3 items-center"><span className="text-sm font-medium text-secondary-text flex items-center gap-2"><Globe className="h-4 w-4 text-muted-text"/> Connection</span><span className="col-span-2 text-sm font-semibold"><Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200"><Check className="h-3 w-3 mr-1" /> Connected</Badge></span></div>

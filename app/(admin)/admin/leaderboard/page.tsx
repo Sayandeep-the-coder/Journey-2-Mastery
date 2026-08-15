@@ -5,18 +5,33 @@ import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import RankBadge from '@/components/shared/RankBadge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Trophy, RefreshCw } from 'lucide-react';
-import { apiDownloadUrl } from '@/lib/api-client';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Trophy, RefreshCw, Download } from 'lucide-react';
+import { csvDownload } from '@/lib/api-client';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export default function AdminLeaderboardPage() {
   const { data: entries, isLoading, isError, error, refetch } = useAdminLeaderboard();
   const recalculate = useRecalculateLeaderboard();
+  const [exporting, setExporting] = useState(false);
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await csvDownload('/admin/leaderboard/export', 'leaderboard.csv');
+      toast.success('Leaderboard CSV exported');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -25,10 +40,10 @@ export default function AdminLeaderboardPage() {
           <Trophy className="h-7 w-7 text-japan-red" />Leaderboard Management
         </h1>
         <div className="flex gap-2">
-          <a href={apiDownloadUrl('/admin/leaderboard/export')} target="_blank" rel="noreferrer">
-            <Button variant="outline" size="sm">Export CSV</Button>
-          </a>
-          <Button variant="outline" size="sm" onClick={() => recalculate.mutate()} disabled={recalculate.isPending}>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting} className="cursor-pointer">
+            <Download className="h-4 w-4 mr-1" />{exporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => recalculate.mutate()} disabled={recalculate.isPending} className="cursor-pointer">
             <RefreshCw className="h-4 w-4 mr-1" />{recalculate.isPending ? 'Recalculating...' : 'Recalculate'}
           </Button>
         </div>

@@ -29,7 +29,7 @@ interface NavItem {
 const userNav: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Tasks', href: '/tasks', icon: ListChecks },
-  { label: 'Submissions', href: '/submissions', icon: Send, mobileOnly: true },
+  { label: 'Submissions', href: '/submissions', icon: Send },
   { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Posts', href: '/posts', icon: FileText },
   { label: 'Profile', href: '/profile', icon: User },

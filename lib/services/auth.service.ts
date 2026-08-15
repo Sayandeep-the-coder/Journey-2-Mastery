@@ -356,6 +356,9 @@ export async function completeProfile(
       year: data.year,
       phone: data.phone,
       bio: data.bio,
+      discord: data.discord,
+      instagram: data.instagram,
+      twitter: data.twitter,
       isProfileComplete: true,
     })
     .where(eq(users.id, userId))

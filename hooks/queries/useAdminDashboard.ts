@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type {
   AdminDashboardData, AdminActivity, AdminUser, User,
@@ -36,6 +36,7 @@ export function useAdminUsers(filters?: { role?: string; rank?: string; search?:
     queryKey: ['admin', 'users', filters],
     queryFn: () => apiFetch<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -130,6 +131,18 @@ export function useAdminTasks() {
   });
 }
 
+export function useToggleAllTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (isActive: boolean) =>
+      apiFetch<{ count: number }>('/admin/tasks/toggle-all', { method: 'POST', body: JSON.stringify({ isActive }) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // also invalidate user-facing tasks
+    },
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -163,17 +176,20 @@ export function useDeleteTask() {
 }
 
 // ─── Submissions ───
-export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string }) {
+export function useAdminSubmissions(filters?: { status?: string; taskId?: string; userId?: string; judgeId?: string; search?: string }) {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
   if (filters?.taskId) params.set('taskId', filters.taskId);
   if (filters?.userId) params.set('userId', filters.userId);
+  if (filters?.judgeId) params.set('judgeId', filters.judgeId);
+  if (filters?.search) params.set('search', filters.search);
   const qs = params.toString();
 
   return useQuery<Submission[], Error>({
     queryKey: ['admin', 'submissions', filters],
     queryFn: () => apiFetch<Submission[]>(`/admin/submissions${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -202,10 +218,10 @@ export function useAssignJudge() {
 export function useOverrideReview() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ reviewId, score, reason }: { reviewId: string; score: number; reason: string }) =>
+    mutationFn: ({ reviewId, totalScore, scores, feedback }: { reviewId: string; totalScore?: number; scores?: { criterionId: string; score: number }[]; feedback: string }) =>
       apiFetch(`/admin/reviews/${reviewId}/override`, {
         method: 'PATCH',
-        body: JSON.stringify({ score, reason }),
+        body: JSON.stringify({ totalScore, scores, feedback }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'submissions'] });

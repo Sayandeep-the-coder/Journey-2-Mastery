@@ -16,11 +16,13 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [role, setRole] = useState('');
-  const { data: users, isLoading, isError, error, refetch } = useAdminUsers({ search: search || undefined, role: role || undefined });
+  const { data: users, isLoading, isError, error, refetch } = useAdminUsers({ search: debouncedSearch || undefined, role: role || undefined });
   const changeRole = useChangeUserRole();
   const deleteUser = useDeleteUser();
 

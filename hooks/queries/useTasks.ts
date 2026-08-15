@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { Task, Category, Submission } from '@/types/api.types';
 
@@ -22,6 +22,7 @@ export function useTasks(filters?: TaskFilters) {
     queryKey: ['user', 'tasks', filters],
     queryFn: () => apiFetch<Task[]>(`/user/tasks${buildTaskQuery(filters)}`),
     staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -53,15 +54,7 @@ export function usePendingTasks() {
 export function useTaskCategories() {
   return useQuery<Category[], Error>({
     queryKey: ['tasks', 'categories'],
-    queryFn: async () => [
-      { id: 'Frontend', name: 'Frontend' },
-      { id: 'Backend', name: 'Backend' },
-      { id: 'Fullstack', name: 'Fullstack' },
-      { id: 'DSA', name: 'DSA' },
-      { id: 'System Design', name: 'System Design' },
-      { id: 'AI/ML', name: 'AI/ML' },
-      { id: 'DevOps', name: 'DevOps' },
-    ],
-    staleTime: Infinity,
+    queryFn: () => apiFetch<Category[]>('/user/tasks/categories'),
+    staleTime: 60 * 1000,
   });
 }
