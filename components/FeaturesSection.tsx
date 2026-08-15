@@ -66,7 +66,7 @@ export default function FeaturesSection() {
           </div>
           <h2 ref={titleRef} className="font-heading text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary-text)] tracking-widest uppercase">
             WEAPONS OF <br />
-            <span className="text-[var(--color-japan-red)]">MASTERY</span>
+            <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">MASTERY</span>
           </h2>
         </div>
 

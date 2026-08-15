@@ -47,40 +47,38 @@ export default function Levels() {
     if (!containerRef.current || !titleRef.current) return;
 
     const ctx = gsap.context(() => {
+      // Main animation timeline
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
-          start: "top top",
-          end: "+=500", // Requires 2500px of scrolling to complete the animation
+          start: "top top", // Pin when section reaches top of viewport
+          end: "+=1500", // Scroll for 1500px to complete animation
           pin: true,
-          scrub: 1, // Smooth scrubbing effect (1 second lag)
+          scrub: 1, // Smooth scrub
         }
       });
 
-      // 1. Heading fades and slides in
+      // 1. Title reveal animation
       tl.fromTo(
         titleRef.current,
-        { opacity: 0, y: 50 },
-        { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
+        { clipPath: "inset(0 100% 0 0)" },
+        {
+          clipPath: "inset(0 0% 0 0)",
+          ease: "none"
+        }
       );
 
-      // 2. Cards come in one by one
+      // 2. Cards reveal animation (Ronin, then Kenshi, etc)
       tl.fromTo(
         cardsRef.current,
-        { opacity: 0, y: 100, scale: 0.9 },
+        { opacity: 0, y: 50 },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 1,
-          stagger: 0.8, // Delay between each card's appearance
-          ease: "back.out(1.2)"
-        },
-        "+=0.2" // Slight delay after heading
+          stagger: 0.5, // sequential stagger
+          ease: "power2.out"
+        }
       );
-
-      // 3. Add a small pause at the end before unpinning
-      tl.to({}, { duration: 0.5 });
 
     }, containerRef);
 
@@ -88,16 +86,16 @@ export default function Levels() {
   }, []);
 
   return (
-    <section id="levels" ref={containerRef} className="min-h-screen flex flex-col justify-center py-12 md:py-20 bg-(--color-off-white) relative z-10 border-b border-(--color-borders) overflow-hidden">
+    <section id="levels" ref={containerRef} className="py-24 md:py-32 bg-(--color-off-white) relative z-10 border-b border-(--color-borders) overflow-hidden">
       {/* Background Image Blend */}
       <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-multiply pointer-events-none z-0"></div>
 
       <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 relative z-10">
 
         {/* Section Title */}
-        <div className="text-center mb-16 md:mb-20 flex flex-col items-center">
-          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest px-4 md:px-0">
-            THE 4 LEVELS OF <span className="text-(--color-japan-red)">MASTERY</span>
+        <div className="text-center mb-16 md:mb-24 flex flex-col items-center">
+          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest whitespace-nowrap overflow-hidden px-4 md:px-0" style={{ clipPath: "inset(0 100% 0 0)" }}>
+            THE 4 LEVELS OF <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">MASTERY</span>
           </h2>
           <div className="w-12 h-px bg-(--color-japan-red) mt-6"></div>
         </div>

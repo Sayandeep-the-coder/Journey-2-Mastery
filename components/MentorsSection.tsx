@@ -116,7 +116,7 @@ export default function MentorsSection() {
             <span className="w-4 h-[1px] bg-[var(--color-japan-red)]"></span>
           </div>
           <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-[var(--color-primary-text)] tracking-widest uppercase">
-            HONORED <span className="text-[var(--color-japan-red)]">MENTORS</span>
+            HONORED <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">MENTORS</span>
           </h2>
         </div>
 

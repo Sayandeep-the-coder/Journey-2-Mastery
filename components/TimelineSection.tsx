@@ -138,7 +138,7 @@ export default function TimelineSection() {
               4-WEEK PROGRAM SCHEDULE
             </div>
             <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-[var(--color-primary-text)] tracking-widest uppercase">
-              QUEST <span className="text-[var(--color-japan-red)]">TIMELINE</span>
+              QUEST <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">TIMELINE</span>
             </h2>
           </div>
 

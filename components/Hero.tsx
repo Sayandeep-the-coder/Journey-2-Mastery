@@ -121,7 +121,7 @@ export default function Hero() {
             JOURNEY TO
           </p>
           
-          <h1 className="font-heading text-5xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
+          <h1 className="font-onari text-5xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
             {"MASTERY".split("").map((char, i) => (
               <span 
                 key={i} 

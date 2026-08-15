@@ -108,7 +108,7 @@ export default function FAQSection() {
             </div>
             
             <h2 className="font-heading text-3xl md:text-5xl text-[var(--color-primary-text)] tracking-widest uppercase mb-4 leading-tight">
-              EVERYTHING YOU <span className="text-[var(--color-japan-red)]">NEED TO KNOW</span>
+              EVERYTHING YOU <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">NEED TO KNOW</span>
             </h2>
 
             <p className="text-sm text-[var(--color-secondary-text)] leading-relaxed mb-8 max-w-md">
