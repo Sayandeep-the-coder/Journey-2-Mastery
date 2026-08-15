@@ -1,9 +1,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+<<<<<<< Updated upstream
   <img src="https://img.shields.io/badge/Hono-4-orange?logo=hono" alt="Hono 4" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
+=======
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TailwindCSS-v4-38B2AC?logo=tailwind-css&logoColor=white" alt="Tailwind CSS v4" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Drizzle_ORM-0.44-C5F74F?logo=drizzle" alt="Drizzle ORM" />
+  <img src="https://img.shields.io/badge/GSAP-88CE02?logo=greensock&logoColor=white" alt="GSAP" />
+>>>>>>> Stashed changes
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
 </p>
 
@@ -11,7 +19,21 @@
 
 A full-stack gamified learning platform inspired by the Japanese martial arts ranking system. Students progress through ranks — **Ronin → Kenshi → Samurai → Shogun** — by completing coding tasks, submitting GitHub repositories for review, and earning scores on a competitive leaderboard.
 
+<<<<<<< Updated upstream
+=======
+Featuring a hyper-minimalist, premium Japanese aesthetic powered by **Tailwind CSS v4** and **GSAP animations**, the platform delivers an immersive, high-performance, and deeply elegant user experience.
+
+---
+
+>>>>>>> Stashed changes
 ## ✨ Features
+
+### 🎨 Premium UI/UX & Aesthetics
+- **Hyper-Minimalist Japanese Design** — Off-white backgrounds, distinct sharp borders, and deep red accents.
+- **Bento Grid Architecture** — Modern asymmetric layout grids for landing page features and timeline.
+- **GSAP Animations** — Seamless scroll-triggered reveals, continuous marquees, and dynamic hover effects.
+- **Responsive Fluidity** — Horizontal snap carousels for mobile breakpoints to reduce vertical clutter.
+- **Custom Typography** — `Onari` font for striking all-caps headers alongside highly legible `Zilla Slab` body text.
 
 ### 👤 User Flow
 - **GitHub OAuth** login with one-click authentication

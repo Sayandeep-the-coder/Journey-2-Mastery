@@ -133,12 +133,12 @@ export default function Hero() {
             ))}
           </h1>
           
-          <h2 className="hero-sub font-heading text-xl md:text-2xl text-(--color-japan-red) font-semibold tracking-widest mb-6">
-            BUILD. LAUNCH. IMPACT.
+          <h2 className="hero-sub font-heading text-xl md:text-2xl text-[var(--color-japan-red)] font-semibold tracking-widest mb-6">
+            RONIN TO SHOGUN
           </h2>
           
-          <p className="hero-sub text-(--color-secondary-text) max-w-md text-lg leading-relaxed mb-10">
-            A 4-week coding program for beginners and developers to turn one idea into a live product with real users.
+          <p className="hero-sub text-[var(--color-secondary-text)] max-w-md text-lg leading-relaxed mb-10">
+            A full-stack gamified learning platform inspired by the Japanese martial arts ranking system. Complete coding tasks, submit repositories for review, and climb the leaderboard.
           </p>
           
           <Link
@@ -185,7 +185,7 @@ export default function Hero() {
 
           {/* Vertical Japanese Text */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-            <div className="relative font-heading text-4xl text-(--color-dark-red) writing-vertical-rl tracking-widest h-64">
+            <div className="relative font-onari text-4xl text-(--color-dark-red) writing-vertical-rl tracking-widest h-64">
               <div ref={jpTextRef} className="absolute inset-0 opacity-100 flex justify-center writing-vertical-rl" style={{ writingMode: 'vertical-rl'}}>
                 開発者コミュニティ
               </div>

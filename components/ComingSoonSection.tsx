@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Sparkles, Swords, Scroll, Trophy, Award, Medal, UserCheck } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,53 +25,29 @@ export default function ComingSoonSection({
     // Title reveal animation
     gsap.fromTo(
       titleRef.current,
-      { clipPath: "inset(0 100% 0 0)" },
+      { opacity: 0, y: 20 },
       {
-        clipPath: "inset(0 0% 0 0)",
-        duration: 1,
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
         ease: "power3.out",
         scrollTrigger: {
           trigger: titleRef.current,
-          start: "top 80%",
+          start: "top 85%",
         }
       }
     );
 
-    // Pulse animation for COMING SOON
+    // Subtle pulse for Coming Soon
     gsap.to(overlayRef.current, {
-      opacity: 0.85,
-      duration: 1.5,
+      opacity: 0.9,
+      duration: 2,
       yoyo: true,
       repeat: -1,
       ease: "sine.inOut"
     });
 
-    // Hover effect for the blurred content
-    const handleMouseEnter = () => {
-      gsap.to(contentRef.current, { filter: "blur(4px)", scale: 1.02, duration: 0.5 });
-    };
-    const handleMouseLeave = () => {
-      gsap.to(contentRef.current, { filter: "blur(12px)", scale: 1.05, duration: 0.5 });
-    };
-
-    const container = containerRef.current;
-    container.addEventListener("mouseenter", handleMouseEnter);
-    container.addEventListener("mouseleave", handleMouseLeave);
-
-    // Scroll trigger curiosity effect
-    gsap.to(contentRef.current, {
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top 60%",
-        end: "top 40%",
-        scrub: true,
-      },
-      filter: "blur(6px)",
-    });
-
     return () => {
-      container.removeEventListener("mouseenter", handleMouseEnter);
-      container.removeEventListener("mouseleave", handleMouseLeave);
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
@@ -89,7 +66,7 @@ export default function ComingSoonSection({
         {/* Coming Soon Area */}
         <div ref={containerRef} className="relative h-96 w-full rounded-sm overflow-hidden group cursor-not-allowed">
           
-          {/* Blurred Content Placeholder */}
+          {/* Card Mock Content */}
           <div 
             ref={contentRef}
             className="absolute inset-0 bg-(--color-card-bg) border border-(--color-borders) scale-105"
@@ -104,12 +81,15 @@ export default function ComingSoonSection({
           </div>
 
           {/* Overlay Text */}
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-[var(--color-off-white)]/40 backdrop-blur-[1px]">
             <span 
               ref={overlayRef}
               className="font-heading text-5xl md:text-7xl text-(--color-japan-red) tracking-[0.2em] font-light mix-blend-multiply"
             >
               COMING SOON
+            </span>
+            <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] text-[var(--color-secondary-text)] uppercase mt-2">
+              DETAILS TO BE REVEALED
             </span>
           </div>
 
@@ -118,3 +98,4 @@ export default function ComingSoonSection({
     </section>
   );
 }
+

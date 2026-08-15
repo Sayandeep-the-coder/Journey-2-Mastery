@@ -1,19 +1,27 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Levels from "@/components/Levels";
-import ComingSoonSection from "@/components/ComingSoonSection";
+import TimelineSection from "@/components/TimelineSection";
+import MentorsSection from "@/components/MentorsSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="bg-(--color-off-white) min-h-screen">
+    <main className="bg-(--color-off-white) min-h-screen relative">
       <Navbar />
       <Hero />
       <Levels />
-      <ComingSoonSection id="timeline" title="Timeline" />
-      <ComingSoonSection id="mentors" title="Mentors" />
-      <ComingSoonSection id="prizes" title="Prizes" />
+      <TimelineSection />
+      <MentorsSection />
+      <FeaturesSection />
+      <FAQSection />
       <Footer />
     </main>
   );
 }
+
+
+
+

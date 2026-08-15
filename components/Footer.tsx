@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowUpRight, Heart } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -32,6 +34,31 @@ export default function Footer() {
     };
   }, []);
 
+  const footerLinks = {
+    program: [
+      { label: "Home", href: "#home" },
+      { label: "4 Levels of Mastery", href: "#levels" },
+      { label: "Quest Timeline", href: "#timeline" },
+      { label: "Honored Mentors", href: "#mentors" },
+      { label: "Honor & Prizes", href: "#prizes" },
+      { label: "Warrior FAQ", href: "#faq" },
+    ],
+    community: [
+      { label: "Dev Community", href: "https://dc.kgec.tech/", external: true },
+      { label: "Discord Server", href: "https://dc.kgec.tech/", external: true },
+      { label: "Leaderboard", href: "/leaderboard" },
+      { label: "GitHub Repository", href: "https://github.com", external: true },
+      { label: "Submission Guidelines", href: "#" },
+    ],
+    resources: [
+      { label: "Starter Kits & Templates", href: "#" },
+      { label: "Architecture Checklist", href: "#" },
+      { label: "Pitch Deck Template", href: "#" },
+      { label: "Office Hours Booking", href: "#mentors" },
+      { label: "Code of Conduct", href: "#" },
+    ],
+  };
+
   return (
     <footer className="bg-[var(--color-off-white)] pt-24 pb-12 border-t border-[var(--color-borders)] relative z-20">
       <div className="max-w-[1440px] w-full mx-auto px-12 md:px-24 flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
@@ -49,39 +76,136 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Center: Seal Stamp */}
-        <div 
-          ref={sealRef}
-          className="flex flex-col items-center justify-center opacity-0"
-        >
-          <div className="border-2 border-[var(--color-dark-red)] p-2 w-16 h-16 flex items-center justify-center text-[var(--color-dark-red)] rounded-sm">
-            <span className="font-heading text-lg text-center leading-tight">魂<br/>決</span>
+            {/* Seal Stamp */}
+            <div 
+              ref={sealRef}
+              className="flex items-center gap-3 mt-2"
+            >
+              <div className="border-2 border-[var(--color-dark-red)] p-1.5 w-12 h-12 flex items-center justify-center text-[var(--color-dark-red)] rounded-sm bg-white shadow-2xs">
+                <span className="font-heading text-sm text-center leading-tight">魂<br/>決</span>
+              </div>
+              <div className="text-[10px] text-[var(--color-secondary-text)] leading-tight">
+                <span className="font-bold text-[var(--color-primary-text)] uppercase block">Dojo Seal</span>
+                Forged for builders
+              </div>
+            </div>
+          </div>
+
+          {/* Links Grid Wrapper for Mobile */}
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-12 w-full">
+            {/* Col 2: Program */}
+            <div className="col-span-1">
+              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Program</span>
+                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.program.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors inline-flex items-center gap-1 group"
+                  >
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            </div>
+
+            {/* Col 3: Community */}
+            <div className="col-span-1">
+              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Community</span>
+                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.community.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors inline-flex items-center gap-1 group"
+                  >
+                    <span>{item.label}</span>
+                    {item.external && (
+                      <ArrowUpRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            </div>
+
+            {/* Col 4: Resources */}
+            <div className="col-span-2 sm:col-span-1">
+              <h4 className="font-heading text-sm text-[var(--color-primary-text)] tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Resources</span>
+                <span className="w-1 h-1 rounded-full bg-[var(--color-japan-red)]"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.resources.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="text-xs text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Right: Links & Social */}
-        <div className="flex flex-col items-center md:items-end gap-6">
-          <div className="flex gap-6">
-            {["Overview", "FAQ", "Contact"].map(link => (
-              <a key={link} href={`#${link.toLowerCase()}`} className="text-sm font-medium tracking-wide text-[var(--color-primary-text)] hover:text-[var(--color-japan-red)] transition-colors">
-                {link}
-              </a>
-            ))}
-          </div>
-          <div className="flex gap-4 text-[var(--color-secondary-text)]">
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-            </a>
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-            </a>
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-            </a>
-          </div>
-          <p className="text-xs text-[var(--color-muted-text)] mt-4">
-            &copy; {new Date().getFullYear()} Journey to Mastery. All rights reserved.
+        {/* Bottom Bar: Copyright & Socials */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-[var(--color-secondary-text)]">
+          <p className="flex items-center gap-1 text-center sm:text-left">
+            <span>&copy; {new Date().getFullYear()} Journey to Mastery. Built with</span>
+            <Heart className="w-3.5 h-3.5 text-[var(--color-japan-red)] fill-current inline" />
+            <span>by Dev Community.</span>
           </p>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-4">
+            <a
+              href="https://x.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              aria-label="X (Twitter)"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              aria-label="GitHub"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z" />
+              </svg>
+            </a>
+
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-[var(--color-card-bg)] border border-[var(--color-borders)] flex items-center justify-center text-[var(--color-secondary-text)] hover:text-[var(--color-japan-red)] hover:border-[var(--color-japan-red)] transition-colors shadow-2xs"
+              aria-label="LinkedIn"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.54a1.45 1.45 0 0 0-1.45 1.45 1.45 1.45 0 0 0 1.45 1.45 1.45 1.45 0 0 0 1.45-1.45 1.45 1.45 0 0 0-1.45-1.45Z" />
+              </svg>
+            </a>
+          </div>
         </div>
 
       </div>

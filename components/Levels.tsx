@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -8,67 +9,32 @@ gsap.registerPlugin(ScrollTrigger);
 
 const levels = [
   {
-    level: "LEVEL 1",
+    level: "I",
     title: "RONIN",
-    subtitle: "Idea & Foundation",
-    description: "Validate your idea and build a solid foundation.",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 6h16" />
-        <path d="M4 10h16" />
-        <path d="M6 6v14" />
-        <path d="M18 6v14" />
-      </svg>
-    ) // Simple Torii
+    subtitle: "The Wanderer",
+    kanji: "浪人",
+    image: "/ronin.png",
   },
   {
-    level: "LEVEL 2",
+    level: "II",
     title: "KENSHI",
-    subtitle: "Build & Forge",
-    description: "Build your MVP and implement core functionality.",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
-        <line x1="13" y1="19" x2="19" y2="13" />
-        <line x1="16" y1="16" x2="20" y2="20" />
-        <line x1="19" y1="21" x2="21" y2="19" />
-        <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
-        <line x1="5" y1="14" x2="9" y2="18" />
-        <line x1="7" y1="17" x2="4" y2="20" />
-        <line x1="3" y1="19" x2="5" y2="21" />
-      </svg>
-    ) // Crossed Swords
+    subtitle: "The Blade",
+    kanji: "剣士",
+    image: "/kenshi.png",
   },
   {
-    level: "LEVEL 3",
+    level: "III",
     title: "SAMURAI",
-    subtitle: "Deploy & Launch",
-    description: "Deploy your product and make it public.",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2a5 5 0 0 0-5 5v2H5v4a5 5 0 0 0 10 0v-4h-2V7a5 5 0 0 0-5-5z" />
-        <path d="M19 9v4a5 5 0 0 1-2.5 4.3" />
-        <path d="M5 9v4a5 5 0 0 0 2.5 4.3" />
-        <path d="M15 17.3A5 5 0 0 1 12 18a5 5 0 0 1-3-.7" />
-        <path d="M8 22h8" />
-        <path d="M12 18v4" />
-      </svg>
-    ) // Helmet
+    subtitle: "The Warrior",
+    kanji: "侍",
+    image: "/samurai.png",
   },
   {
-    level: "LEVEL 4",
+    level: "IV",
     title: "SHOGUN",
-    subtitle: "Traction & Impact",
-    description: "Get real users and create real impact.",
-    icon: (
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4" />
-        <path d="M12 8h.01" />
-        <path d="M8 12h8" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ) // Clan Symbol
+    subtitle: "The Master",
+    kanji: "将軍",
+    image: "/shogun.png",
   }
 ];
 
@@ -80,45 +46,49 @@ export default function Levels() {
   useEffect(() => {
     if (!containerRef.current || !titleRef.current) return;
 
-    // Main animation timeline
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top", // Pin when section reaches top of viewport
-        end: "+=1500", // Scroll for 1500px to complete animation
-        pin: true,
-        scrub: 1, // Smooth scrub
-      }
-    });
+    let ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "+=500", // Requires 2500px of scrolling to complete the animation
+          pin: true,
+          scrub: 1, // Smooth scrubbing effect (1 second lag)
+        }
+      });
 
-    // 1. Title reveal animation
-    tl.fromTo(
-      titleRef.current,
-      { clipPath: "inset(0 100% 0 0)" },
-      {
-        clipPath: "inset(0 0% 0 0)",
-        ease: "none"
-      }
-    );
+      // 1. Heading fades and slides in
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
+      );
 
-    // 2. Cards reveal animation (Ronin, then Kenshi, etc)
-    tl.fromTo(
-      cardsRef.current,
-      { opacity: 0, y: 50 },
-      {
-        opacity: 1,
-        y: 0,
-        stagger: 0.5, // sequential stagger
-        ease: "power2.out"
-      }
-    );
+      // 2. Cards come in one by one
+      tl.fromTo(
+        cardsRef.current,
+        { opacity: 0, y: 100, scale: 0.9 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1, 
+          duration: 1, 
+          stagger: 0.8, // Delay between each card's appearance
+          ease: "back.out(1.2)" 
+        },
+        "+=0.2" // Slight delay after heading
+      );
+      
+      // 3. Add a small pause at the end before unpinning
+      tl.to({}, { duration: 0.5 });
+      
+    }, containerRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   return (
+<<<<<<< Updated upstream
     <section id="levels" ref={containerRef} className="py-32 bg-(--color-off-white) relative z-20">
       <div className="max-w-360 w-full mx-auto px-12 md:px-24">
         
@@ -126,43 +96,73 @@ export default function Levels() {
         <div className="text-center mb-24 flex flex-col items-center">
           <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest whitespace-nowrap overflow-hidden">
             THE 4 LEVELS OF <span className="text-(--color-japan-red)">MASTERY</span>
+=======
+    <section id="levels" ref={containerRef} className="min-h-screen flex flex-col justify-center py-12 md:py-20 bg-[var(--color-off-white)] relative z-10 border-b border-[var(--color-borders)] overflow-hidden">
+      {/* Background Image Blend */}
+      <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-multiply pointer-events-none z-0"></div>
+      
+      <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 relative z-10">
+        
+        {/* Section Title */}
+        <div className="text-center mb-16 md:mb-20 flex flex-col items-center">
+          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-[var(--color-primary-text)] tracking-widest px-4 md:px-0">
+            THE 4 LEVELS OF <span className="text-[var(--color-japan-red)]">MASTERY</span>
+>>>>>>> Stashed changes
           </h2>
-          <div className="w-12 h-0.5 bg-(--color-japan-red) mt-8"></div>
+          <div className="w-12 h-[1px] bg-[var(--color-japan-red)] mt-6"></div>
         </div>
 
-        {/* Levels Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Levels Grid - Minimalist UI */}
+        <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 sm:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {levels.map((level, i) => (
             <div 
               key={level.title}
               ref={el => { if (el) cardsRef.current[i] = el; }}
-              className="group relative flex flex-col items-center text-center px-6 py-10 transition-all duration-500 hover:-translate-y-2 lg:border-r border-(--color-borders) last:border-0"
+              className="group relative flex flex-col items-center justify-center p-8 bg-white border border-[var(--color-borders)] transition-all duration-500 hover:border-[var(--color-japan-red)] overflow-hidden min-w-[85vw] sm:min-w-0 shrink-0 snap-center"
             >
-              {/* Icon */}
-              <div className="text-(--color-japan-red) mb-6 transition-transform duration-500 group-hover:scale-110">
-                {level.icon}
+              {/* Background Kanji Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none group-hover:opacity-[0.08] transition-opacity duration-700">
+                <span className="text-9xl font-heading text-[var(--color-primary-text)] select-none">
+                  {level.kanji}
+                </span>
               </div>
               
-              {/* Level Number */}
-              <div className="text-xs font-semibold tracking-[0.2em] text-(--color-secondary-text) mb-2">
-                {level.level}
+              {/* Vertical Level Number (Japanese Editorial Style) */}
+              <div className="absolute top-4 left-4 text-[10px] font-bold tracking-widest text-[var(--color-secondary-text)] opacity-50 [writing-mode:vertical-rl] group-hover:text-[var(--color-japan-red)] group-hover:opacity-100 transition-colors duration-500">
+                LEVEL {level.level}
+              </div>
+
+              {/* Circular Avatar */}
+              <div className="relative w-28 h-28 mb-6 rounded-full border border-[var(--color-borders)] p-1 group-hover:border-[var(--color-japan-red)] transition-colors duration-500 z-10 bg-white">
+                <div className="relative w-full h-full rounded-full overflow-hidden bg-[var(--color-off-white)]">
+                  <Image
+                    src={level.image}
+                    alt={level.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out grayscale group-hover:grayscale-0"
+                  />
+                </div>
               </div>
               
-              {/* Title */}
-              <h3 className="font-heading text-3xl tracking-widest text-(--color-primary-text) mb-6 relative">
-                {level.title}
-              </h3>
-              
-              {/* Subtitle */}
-              <div className="text-sm font-medium text-(--color-primary-text) mb-4 relative inline-block">
-                {level.subtitle}
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-px bg-(--color-japan-red) transition-all duration-300 group-hover:w-full"></span>
+              {/* Typographic Core */}
+              <div className="text-center relative z-10">
+                <h3 className="font-onari text-2xl tracking-widest text-[var(--color-primary-text)] mb-2 group-hover:text-[var(--color-japan-red)] transition-colors duration-500">
+                  {level.title}
+                </h3>
+                
+                <div className="flex items-center justify-center gap-2">
+                  <span className="w-3 h-[1px] bg-[var(--color-secondary-text)] opacity-50"></span>
+                  <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-secondary-text)] uppercase">
+                    {level.subtitle}
+                  </span>
+                  <span className="w-3 h-[1px] bg-[var(--color-secondary-text)] opacity-50"></span>
+                </div>
               </div>
               
-              {/* Description */}
-              <p className="text-(--color-secondary-text) text-sm leading-relaxed mt-4">
-                {level.description}
-              </p>
+              {/* Bottom Right Kanji Accent */}
+              <div className="absolute bottom-4 right-4 text-xs font-heading text-[var(--color-japan-red)] opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                {level.kanji}
+              </div>
             </div>
           ))}
         </div>
@@ -171,3 +171,4 @@ export default function Levels() {
     </section>
   );
 }
+
