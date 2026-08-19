@@ -1,14 +1,16 @@
 'use client';
 
-import { useLeaderboard } from '@/hooks/queries/useLeaderboard';
+import { useState } from 'react';
+import { useLeaderboard, useTeamLeaderboard } from '@/hooks/queries/useLeaderboard';
 import { useSession } from '@/hooks/useSession';
+import { useTeamDetail } from '@/hooks/queries/useTeam';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import RankBadge from '@/components/shared/RankBadge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, Crown, Medal, Swords, Sparkles } from 'lucide-react';
+import { Trophy, Crown, Medal, Swords, Sparkles, Users, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -22,7 +24,10 @@ function NinjaStarIcon({ className }: { className?: string }) {
 
 export default function LeaderboardPage() {
   const { data: entries, isLoading, isError, error, refetch } = useLeaderboard();
+  const { data: teamEntries, isLoading: isTeamLoading } = useTeamLeaderboard();
   const { data: currentUser } = useSession();
+  const { data: myTeam } = useTeamDetail();
+  const [activeView, setActiveView] = useState<'individual' | 'teams'>('individual');
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
@@ -45,6 +50,35 @@ export default function LeaderboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 mt-6">
+        <button
+          onClick={() => setActiveView('individual')}
+          className={cn(
+            'px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200',
+            activeView === 'individual'
+              ? 'bg-japan-red text-white shadow-md'
+              : 'bg-white text-secondary-text border border-borders hover:bg-off-white'
+          )}
+        >
+          <span className="flex items-center gap-2"><Trophy className="w-4 h-4" /> Individual</span>
+        </button>
+        <button
+          onClick={() => setActiveView('teams')}
+          className={cn(
+            'px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-200',
+            activeView === 'teams'
+              ? 'bg-japan-red text-white shadow-md'
+              : 'bg-white text-secondary-text border border-borders hover:bg-off-white'
+          )}
+        >
+          <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Clan Rankings</span>
+        </button>
+      </div>
+
+      {activeView === 'individual' ? (
+      <>
 
       {/* Compact Top 3 podium */}
       {entries && entries.length >= 3 && (
@@ -202,6 +236,116 @@ export default function LeaderboardPage() {
           </Table>
         </CardContent>
       </Card>
+      </>
+      ) : (
+      /* ═══════ TEAM LEADERBOARD ═══════ */
+      <>
+        {isTeamLoading ? (
+          <LoadingSkeleton variant="table" />
+        ) : !teamEntries || teamEntries.length === 0 ? (
+          <Card className="border-borders shadow-sm bg-white mt-8 rounded-2xl">
+            <CardContent className="py-16 text-center">
+              <Users className="w-12 h-12 text-borders mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-primary-text mb-2">No Clans Ranked Yet</h3>
+              <p className="text-secondary-text text-sm">Teams will appear here once they start earning points through submissions.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-borders shadow-lg bg-card-bg overflow-hidden mt-8 rounded-2xl">
+            <CardHeader className="border-b border-borders/50 bg-secondary-bg/30 flex flex-row items-center justify-between py-6 px-8">
+              <CardTitle className="font-serif text-2xl flex items-center gap-3">
+                <Shield className="w-6 h-6 text-japan-red" />
+                Clan Rankings
+              </CardTitle>
+              <div className="px-4 py-1.5 bg-white border border-borders text-primary-text shadow-sm rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {teamEntries.length} Ranked Clans
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-secondary-bg/20">
+                  <TableRow className="hover:bg-transparent border-borders/50">
+                    <TableHead className="w-24 text-center font-bold text-muted-text">Rank</TableHead>
+                    <TableHead className="font-bold text-muted-text">Clan</TableHead>
+                    <TableHead className="font-bold text-muted-text">Members</TableHead>
+                    <TableHead className="text-right font-bold text-muted-text">Honor Points</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {teamEntries.map((team) => (
+                    <TableRow
+                      key={team.teamId}
+                      className={cn(
+                        "transition-all duration-300 border-borders/50 group cursor-default",
+                        myTeam?.id === team.teamId
+                          ? 'bg-japan-red/[0.03] border-l-4 border-l-japan-red hover:bg-japan-red/[0.05]'
+                          : 'hover:bg-secondary-bg/40'
+                      )}
+                    >
+                      <TableCell className="font-bold text-center py-4">
+                        {team.rank <= 3 ? (
+                          <span className={cn(
+                            "inline-flex items-center justify-center w-10 h-10 rounded-full text-white font-black text-lg shadow-lg group-hover:scale-110 transition-transform",
+                            team.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-amber-600 ring-4 ring-amber-100" :
+                            team.rank === 2 ? "bg-gradient-to-br from-slate-200 to-slate-500 ring-4 ring-slate-100" :
+                            "bg-gradient-to-br from-orange-300 to-orange-700 ring-4 ring-orange-100"
+                          )}>
+                            {team.rank}
+                          </span>
+                        ) : (
+                          <span className="text-muted-text font-serif text-xl font-bold group-hover:text-primary-text transition-colors">#{team.rank}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-lg shadow-sm",
+                            myTeam?.id === team.teamId ? 'border-japan-red bg-red-50 text-japan-red' : 'border-borders bg-white text-primary-text'
+                          )}>
+                            {team.teamName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className={cn(
+                              'text-base font-bold',
+                              myTeam?.id === team.teamId ? 'text-japan-red' : 'text-primary-text'
+                            )}>
+                              {team.teamName}
+                            </span>
+                            {myTeam?.id === team.teamId && (
+                              <span className="text-[10px] text-japan-red uppercase tracking-widest font-black mt-0.5">Your Clan</span>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex -space-x-2">
+                          {team.members?.slice(0, 3).map((member, idx) => (
+                            <Avatar key={member.userId} className="h-8 w-8 border-2 border-white shadow-sm" title={member.userName}>
+                              {member.avatarUrl && <AvatarImage src={member.avatarUrl} />}
+                              <AvatarFallback className="text-xs font-bold">{member.userName?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                          ))}
+                          <span className="flex items-center justify-center text-xs font-bold text-secondary-text ml-3">
+                            {team.memberCount} members
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-black text-lg text-primary-text py-4">
+                        <div className="flex items-center justify-end gap-2 group-hover:scale-105 transition-transform origin-right">
+                          <NinjaStarIcon className="w-5 h-5 text-japan-red" />
+                          {team.score}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </>
+      )}
     </div>
   );
 }
