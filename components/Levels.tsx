@@ -46,7 +46,9 @@ export default function Levels() {
   useEffect(() => {
     if (!containerRef.current || !titleRef.current) return;
 
-    const ctx = gsap.context(() => {
+    const mm = gsap.matchMedia();
+
+    mm.add("(min-width: 768px)", () => {
       // Main animation timeline
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -79,10 +81,9 @@ export default function Levels() {
           ease: "power2.out"
         }
       );
-
     }, containerRef);
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
@@ -94,19 +95,19 @@ export default function Levels() {
 
         {/* Section Title */}
         <div className="text-center mb-16 md:mb-24 flex flex-col items-center">
-          <h2 ref={titleRef} className="font-heading text-3xl md:text-5xl text-(--color-primary-text) tracking-widest whitespace-nowrap overflow-hidden px-4 md:px-0" style={{ clipPath: "inset(0 100% 0 0)" }}>
-            THE 4 LEVELS OF <span className="text-(--color-japan-red) font-onari font-normal tracking-normal">MASTERY</span>
+          <h2 ref={titleRef} className="font-heading text-2xl md:text-5xl text-(--color-primary-text) tracking-widest leading-tight px-4 md:px-0" style={{ clipPath: "inset(0 100% 0 0)" }}>
+            THE 4 LEVELS OF <span className="text-(--color-japan-red) font-onari font-normal tracking-normal block md:inline mt-2 md:mt-0">MASTERY</span>
           </h2>
           <div className="w-12 h-px bg-(--color-japan-red) mt-6"></div>
         </div>
 
         {/* Levels Grid - Minimalist UI */}
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 sm:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden">
+        <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-6 pb-8 snap-x snap-mandatory [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden -mx-6 px-6 md:-mx-12 md:px-12 lg:mx-0 lg:px-0">
           {levels.map((level, i) => (
             <div
               key={level.title}
               ref={el => { if (el) cardsRef.current[i] = el; }}
-              className="group relative flex flex-col items-center justify-center p-8 bg-white border border-(--color-borders) transition-all duration-500 hover:border-(--color-japan-red) overflow-hidden min-w-[85vw] sm:min-w-0 shrink-0 snap-center"
+              className="group relative flex flex-col items-center justify-center p-8 bg-white border border-(--color-borders) transition-all duration-500 hover:border-(--color-japan-red) overflow-hidden min-w-[85vw] sm:min-w-[320px] lg:min-w-0 shrink-0 snap-center"
             >
               {/* Background Kanji Watermark */}
               <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none group-hover:opacity-[0.08] transition-opacity duration-700">

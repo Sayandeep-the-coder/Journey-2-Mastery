@@ -51,39 +51,43 @@ export default function FAQSection() {
   useEffect(() => {
     if (!containerRef.current || !leftColRef.current) return;
 
-    gsap.fromTo(
-      leftColRef.current,
-      { opacity: 0, x: -30 },
-      {
-        opacity: 1,
-        x: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 80%",
-        }
-      }
-    );
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      
+      mm.add("(min-width: 768px)", () => {
+        gsap.fromTo(
+          leftColRef.current,
+          { opacity: 0, x: -30 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 80%",
+            }
+          }
+        );
 
-    gsap.fromTo(
-      rightColRef.current,
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 80%",
-        }
-      }
-    );
+        gsap.fromTo(
+          rightColRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 80%",
+            }
+          }
+        );
+      });
+    }, containerRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   const toggleAccordion = (index: number) => {

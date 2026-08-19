@@ -86,40 +86,44 @@ export default function MentorsSection() {
   useEffect(() => {
     if (!containerRef.current || !titleRef.current) return;
 
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: "top 85%",
-        }
-      }
-    );
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      
+      mm.add("(min-width: 768px)", () => {
+        gsap.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: titleRef.current,
+              start: "top 85%",
+            }
+          }
+        );
 
-    gsap.fromTo(
-      cardsRef.current,
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1,
-        y: 0,
-        stagger: 0.15,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 75%",
-        }
-      }
-    );
+        gsap.fromTo(
+          cardsRef.current,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.15,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 75%",
+            }
+          }
+        );
+      });
+    }, containerRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   return (

@@ -71,56 +71,60 @@ export default function TimelineSection() {
   useEffect(() => {
     if (!containerRef.current || !titleRef.current) return;
 
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: "top 85%",
-        }
-      }
-    );
-
-    gsap.fromTo(
-      cardsRef.current,
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1,
-        y: 0,
-        stagger: 0.18,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 75%",
-        }
-      }
-    );
-
-    if (lineRef.current) {
-      gsap.fromTo(
-        lineRef.current,
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          duration: 1.2,
-          ease: "power2.inOut",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: "top 70%",
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      
+      mm.add("(min-width: 768px)", () => {
+        gsap.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: titleRef.current,
+              start: "top 85%",
+            }
           }
-        }
-      );
-    }
+        );
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+        gsap.fromTo(
+          cardsRef.current,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.18,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 75%",
+            }
+          }
+        );
+
+        if (lineRef.current) {
+          gsap.fromTo(
+            lineRef.current,
+            { scaleX: 0 },
+            {
+              scaleX: 1,
+              duration: 1.2,
+              ease: "power2.inOut",
+              scrollTrigger: {
+                trigger: containerRef.current,
+                start: "top 70%",
+              }
+            }
+          );
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
   }, []);
 
   return (
@@ -157,14 +161,14 @@ export default function TimelineSection() {
             className="hidden xl:block absolute top-6 left-12 right-12 h-[1px] bg-[var(--color-borders)] origin-left z-0"
           />
 
-          <div className="flex overflow-x-auto md:grid md:grid-cols-2 xl:grid-cols-4 gap-6 relative z-10 pb-6 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex overflow-x-auto xl:grid xl:grid-cols-4 gap-6 relative z-10 pb-8 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-6 px-6 md:-mx-12 md:px-12 lg:-mx-24 lg:px-24 xl:mx-0 xl:px-0">
             {timelineStages.map((stage, i) => {
               const Icon = stage.icon;
               return (
                 <div
                   key={stage.week}
                   ref={el => { if (el) cardsRef.current[i] = el; }}
-                  className="group relative flex flex-col p-8 bg-white border border-[var(--color-borders)] hover:border-[var(--color-japan-red)] transition-all duration-500 overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+                  className="group relative flex flex-col p-8 bg-white border border-[var(--color-borders)] hover:border-[var(--color-japan-red)] transition-all duration-500 overflow-hidden min-w-[85vw] sm:min-w-[320px] xl:min-w-0 shrink-0 snap-center"
                 >
                   {/* Background Kanji */}
                   <div className="absolute -right-4 -bottom-10 text-[180px] font-heading text-[var(--color-primary-text)] opacity-[0.03] select-none pointer-events-none group-hover:opacity-[0.08] group-hover:text-[var(--color-japan-red)] transition-all duration-700">

@@ -15,40 +15,44 @@ export default function FeaturesSection() {
   useEffect(() => {
     if (!containerRef.current || !titleRef.current) return;
 
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: "top 85%",
-        }
-      }
-    );
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      
+      mm.add("(min-width: 768px)", () => {
+        gsap.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: titleRef.current,
+              start: "top 85%",
+            }
+          }
+        );
 
-    gsap.fromTo(
-      cardsRef.current,
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1,
-        y: 0,
-        stagger: 0.1,
-        duration: 0.8,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 75%",
-        }
-      }
-    );
+        gsap.fromTo(
+          cardsRef.current,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.1,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 75%",
+            }
+          }
+        );
+      });
+    }, containerRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   return (
@@ -71,12 +75,15 @@ export default function FeaturesSection() {
         </div>
 
         {/* Bento Grid Layout */}
-        <div className="flex overflow-x-auto md:grid md:grid-cols-2 lg:grid-cols-3 auto-rows-[220px] md:auto-rows-[260px] gap-4 md:gap-6 pb-6 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div 
+          className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-2 lg:grid-cols-3 auto-rows-[auto] md:auto-rows-[260px] gap-6 pb-8 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: 'none' }}
+        >
           
           {/* 1. HUGE FEATURE - Dark Mode */}
           <div 
             ref={el => { if (el) cardsRef.current[0] = el; }}
-            className="md:col-span-2 md:row-span-2 relative bg-[#111] group overflow-hidden flex flex-col justify-between p-6 md:p-8 border border-transparent hover:border-[var(--color-japan-red)] transition-colors duration-500 min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="shrink-0 w-[85vw] md:w-auto snap-center col-span-1 md:col-span-2 md:row-span-2 relative bg-[#111] group overflow-hidden flex flex-col justify-between p-8 border border-transparent hover:border-[var(--color-japan-red)] transition-colors duration-500"
           >
             <div className="absolute inset-0 bg-[url('/images/landscape-temple.png')] bg-cover bg-center opacity-30 mix-blend-luminosity group-hover:scale-105 transition-transform duration-1000"></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
@@ -109,7 +116,7 @@ export default function FeaturesSection() {
           {/* 2. SQUARE FEATURE - Pure White */}
           <div 
             ref={el => { if (el) cardsRef.current[1] = el; }}
-            className="col-span-1 row-span-1 bg-white border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="shrink-0 w-[85vw] md:w-auto snap-center col-span-1 row-span-1 bg-white border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden"
           >
             {/* Background Image Blend */}
             <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-[0.03] mix-blend-multiply group-hover:opacity-[0.06] transition-opacity duration-700"></div>
@@ -130,7 +137,7 @@ export default function FeaturesSection() {
           {/* 3. SQUARE FEATURE - Japan Red Accent */}
           <div 
             ref={el => { if (el) cardsRef.current[2] = el; }}
-            className="col-span-1 row-span-1 bg-[var(--color-japan-red)] border border-transparent group p-6 flex flex-col relative overflow-hidden text-white min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="shrink-0 w-[85vw] md:w-auto snap-center col-span-1 row-span-1 bg-[var(--color-japan-red)] border border-transparent group p-6 flex flex-col relative overflow-hidden text-white"
           >
             <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-10 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000"></div>
             <div className="absolute -right-4 -bottom-4 text-9xl font-heading text-black opacity-10 select-none">掟</div>
@@ -151,7 +158,7 @@ export default function FeaturesSection() {
           {/* 4. WIDE FEATURE - Light Theme */}
           <div 
             ref={el => { if (el) cardsRef.current[3] = el; }}
-            className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[var(--color-borders)] group hover:border-[var(--color-primary-text)] transition-colors duration-500 p-6 flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="shrink-0 w-[85vw] md:w-auto snap-center col-span-1 md:col-span-2 row-span-1 bg-white border border-[var(--color-borders)] group hover:border-[var(--color-primary-text)] transition-colors duration-500 p-6 flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden"
           >
             {/* Background Image Blend */}
             <div className="absolute inset-0 bg-[url('/images/landscape-temple.png')] bg-cover bg-center opacity-[0.02] mix-blend-multiply group-hover:opacity-[0.05] transition-opacity duration-700"></div>
@@ -182,7 +189,7 @@ export default function FeaturesSection() {
           {/* 5. SQUARE FEATURE - Off White */}
           <div 
             ref={el => { if (el) cardsRef.current[4] = el; }}
-            className="col-span-1 md:col-span-2 lg:col-span-1 row-span-1 bg-[var(--color-card-bg)] border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="shrink-0 w-[85vw] md:w-auto snap-center col-span-1 md:col-span-2 lg:col-span-1 row-span-1 bg-[var(--color-card-bg)] border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden"
           >
             {/* Background Image Blend */}
             <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-[0.03] mix-blend-multiply group-hover:opacity-[0.06] transition-opacity duration-700"></div>
