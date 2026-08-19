@@ -95,7 +95,7 @@ export default function Levels() {
 
         {/* Section Title */}
         <div className="text-center mb-16 md:mb-24 flex flex-col items-center">
-          <h2 ref={titleRef} className="font-heading text-2xl md:text-5xl text-(--color-primary-text) tracking-widest leading-tight px-4 md:px-0" style={{ clipPath: "inset(0 100% 0 0)" }}>
+          <h2 ref={titleRef} className="font-heading text-2xl md:text-5xl text-(--color-primary-text) tracking-widest leading-tight px-4 md:px-0">
             THE 4 LEVELS OF <span className="text-(--color-japan-red) font-onari font-normal tracking-normal block md:inline mt-2 md:mt-0">MASTERY</span>
           </h2>
           <div className="w-12 h-px bg-(--color-japan-red) mt-6"></div>
