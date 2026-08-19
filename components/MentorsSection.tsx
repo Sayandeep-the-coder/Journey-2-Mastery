@@ -21,40 +21,61 @@ interface Mentor {
 
 const mentors: Mentor[] = [
   {
-    name: "Abhinav Jain",
-    role: "AI & Architecture",
-    kanji: "知",
-    image: "/ronin.png",
-    socials: { github: "#", linkedin: "#", twitter: "#" },
+    name: "Sayan Chaterjee",
+    role: "Software Engineer & Mentor",
+    kanji: "師",
+    image: "/Judges-img/sayan.png",
+    socials: { 
+      github: "https://github.com/sayanChaterjee", 
+      linkedin: "https://www.linkedin.com/in/sayan-chatterjee-devch/", 
+      twitter: "https://x.com/devch_sayan" 
+    },
   },
   {
-    name: "Aayush Verma",
-    role: "Product & Growth",
+    name: "Shatakshi Saha",
+    role: "Mentor",
     kanji: "創",
-    image: "/kenshi.png",
-    socials: { github: "#", linkedin: "#", twitter: "#" },
+    image: "/Judges-img/shatakshi.png",
+    socials: { 
+      github: "https://github.com/ShatakshiSaha19", 
+      linkedin: "https://www.linkedin.com/in/shatakshisaha", 
+      twitter: "https://x.com/ShatakshiSahaa" 
+    },
   },
   {
-    name: "Sanket Agrawal",
-    role: "Full-Stack & Scale",
+    name: "Ananya Ghosh",
+    role: "Mentor",
     kanji: "基",
-    image: "/samurai.png",
-    socials: { github: "#", linkedin: "#", twitter: "#" },
+    image: "/Judges-img/ananya.png",
+    socials: { 
+      github: "https://github.com/Ananya9304", 
+      linkedin: "https://www.linkedin.com/in/ananya-ghosh-014b00290", 
+      twitter: "https://x.com/AnanyaGhos57680" 
+    },
   },
   {
-    name: "Pooja Sharma",
-    role: "UI/UX & Design",
+    name: "Ishita Mukherjee",
+    role: "Mentor",
     kanji: "美",
-    image: "/shogun.png",
-    socials: { github: "#", linkedin: "#", twitter: "#" },
+    image: "/Judges-img/ishita.png",
+    socials: { 
+      github: "https://github.com/Ishitamukherjee2004", 
+      linkedin: "https://www.linkedin.com/in/ishita-mukherjee/", 
+      twitter: "https://x.com/IshitaM01204933" 
+    },
   },
   {
-    name: "Yuki Nakamura",
-    role: "DevOps & Cloud",
-    kanji: "雲",
-    image: "/ronin.png",
-    socials: { github: "#", linkedin: "#", twitter: "#" },
-  },
+    name: "Md Kaif Sardar",
+    role: "Full stack developer & Mentor",
+    kanji: "知",
+    image: "/Judges-img/kaif.jpg",
+    socials: { 
+      github: "https://github.com/MdKaifSardar/", 
+      linkedin: "https://www.linkedin.com/in/md-kaif-sardar-12aab4290/", 
+      twitter: "https://x.com/Haha00234" 
+    },
+  }
+
 ];
 
 export default function MentorsSection() {
@@ -143,7 +164,7 @@ export default function MentorsSection() {
                       src={mentor.image}
                       alt={mentor.name}
                       fill
-                      className="object-cover group-hover/card:scale-110 transition-transform duration-700 ease-out grayscale group-hover/card:grayscale-0"
+                      className="object-cover object-top group-hover/card:scale-110 transition-transform duration-700 ease-out grayscale group-hover/card:grayscale-0"
                     />
                   </div>
                 </div>

@@ -35,8 +35,8 @@ export default function Navbar() {
       <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-(--color-japan-red) flex items-center justify-center text-white shrink-0">
-            <svg width="20" height="20" className="md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h16"/><path d="M4 14h16"/><path d="M12 4v16"/><path d="M12 4c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8z"/></svg>
+          <div className="w-10 h-10 md:w-12 md:h-12 relative shrink-0">
+            <img src="/j2m-logo.png" alt="J2M Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] md:text-xs tracking-[0.2em] text-(--color-secondary-text) leading-tight">JOURNEY TO</span>
@@ -45,7 +45,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Links and CTA */}
-        <div className="hidden lg:flex items-center gap-10">
+        <div className="hidden xl:flex items-center gap-10">
           {navLinks.map((link, i) => (
             <a
               key={link}
@@ -74,7 +74,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Toggle & CTA */}
-        <div className="flex lg:hidden items-center gap-4">
+        <div className="flex xl:hidden items-center gap-4">
           <Link
             href={user ? "/dashboard" : "/login"}
             className="px-4 py-2 border border-(--color-japan-red) bg-(--color-japan-red) text-white hover:bg-transparent hover:text-(--color-japan-red) text-[10px] md:text-xs tracking-widest font-medium transition-all duration-300 rounded-sm"
@@ -92,7 +92,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 h-[100vh] bg-(--color-off-white) pt-8 px-6 md:px-12 flex flex-col items-start gap-6 lg:hidden animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="absolute top-full left-0 right-0 h-[100vh] bg-(--color-off-white) pt-8 px-6 md:px-12 flex flex-col items-start gap-6 xl:hidden animate-in fade-in slide-in-from-top-4 duration-300">
           {navLinks.map((link, i) => (
             <a
               key={link}

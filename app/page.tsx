@@ -6,19 +6,22 @@ import MentorsSection from "@/components/MentorsSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import SmoothScrolling from "@/components/SmoothScrolling";
 
 export default function Home() {
   return (
-    <main className="bg-(--color-off-white) min-h-screen relative">
-      <Navbar />
-      <Hero />
-      <Levels />
-      <TimelineSection />
-      <MentorsSection />
-      <FeaturesSection />
-      <FAQSection />
-      <Footer />
-    </main>
+    <SmoothScrolling>
+      <main className="bg-(--color-off-white) min-h-screen relative">
+        <Navbar />
+        <Hero />
+        <Levels />
+        <TimelineSection />
+        <MentorsSection />
+        <FeaturesSection />
+        <FAQSection />
+        <Footer />
+      </main>
+    </SmoothScrolling>
   );
 }
 

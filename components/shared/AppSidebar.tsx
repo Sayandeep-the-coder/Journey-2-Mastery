@@ -99,8 +99,8 @@ export default function AppSidebar({ role, children }: AppSidebarProps) {
     <>
       {/* Logo */}
       <div className={cn('flex items-center gap-3 px-4 py-5', collapsed && 'justify-center')}>
-        <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0">
-          <Image src="/images/logo.png" alt="Logo" width={40} height={40} className="object-contain drop-shadow-sm" priority />
+        <div className="w-10 h-10 flex items-center justify-center shrink-0">
+          <Image src="/j2m-logo.png" alt="J2M Logo" width={40} height={40} className="object-contain drop-shadow-sm" priority />
         </div>
         {!collapsed && (
           <span className="font-serif font-semibold text-primary-text text-sm">Journey to Mastery</span>

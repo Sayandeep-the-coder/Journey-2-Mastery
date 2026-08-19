@@ -154,10 +154,10 @@ export default function TimelineSection() {
           {/* Connecting Rail Line (Desktop) */}
           <div 
             ref={lineRef}
-            className="hidden lg:block absolute top-6 left-12 right-12 h-[1px] bg-[var(--color-borders)] origin-left z-0"
+            className="hidden xl:block absolute top-6 left-12 right-12 h-[1px] bg-[var(--color-borders)] origin-left z-0"
           />
 
-          <div className="flex overflow-x-auto md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 pb-6 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex overflow-x-auto md:grid md:grid-cols-2 xl:grid-cols-4 gap-6 relative z-10 pb-6 md:pb-0 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {timelineStages.map((stage, i) => {
               const Icon = stage.icon;
               return (

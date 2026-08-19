@@ -115,13 +115,13 @@ export default function Hero() {
 
       <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 h-full flex pt-24 pb-12 relative z-10">
         
-        {/* Left: Text Content (45%) */}
-        <div ref={heroContentRef} className="w-full md:w-[45%] h-full flex flex-col justify-center opacity-0">
+        {/* Left: Text Content (45% / 50%) */}
+        <div ref={heroContentRef} className="w-full lg:w-[50%] xl:w-[45%] h-full flex flex-col justify-center opacity-0">
           <p className="hero-sub text-sm tracking-[0.2em] text-(--color-secondary-text) mb-4">
             JOURNEY TO
           </p>
           
-          <h1 className="font-onari text-5xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
+          <h1 className="font-onari text-5xl md:text-7xl lg:text-7xl xl:text-[90px] 2xl:text-[110px] leading-none mb-8 text-(--color-primary-text)">
             {"MASTERY".split("").map((char, i) => (
               <span 
                 key={i} 
@@ -151,8 +151,8 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Right: Visual (55%) */}
-        <div className="hidden md:flex w-[55%] h-full relative items-center justify-center">
+        {/* Right: Visual (55% / 50%) */}
+        <div className="hidden lg:flex lg:w-[50%] xl:w-[55%] h-full relative items-center justify-center">
           {/* Torii Gate Image Placeholder */}
           <div 
             ref={gateRef}

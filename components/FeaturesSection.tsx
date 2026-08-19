@@ -90,13 +90,13 @@ export default function FeaturesSection() {
 
             <div className="relative z-10">
               <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-3">
-                Core Program
+                The Journey
               </div>
               <h3 className="font-heading text-4xl md:text-5xl text-white tracking-widest mb-6">
                 COMPETITIVE<br/>LEADERBOARD
               </h3>
               <ul className="flex flex-col gap-3 max-w-sm">
-                {["Live Ranking System", "Ronin to Shogun Path", "Dynamic Score Tracking"].map((f, i) => (
+                {["Live Ranking System", "Rank up from Ronin to Shogun", "Earn Points for Shipping Code"].map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-gray-300 tracking-wider">
                     <ChevronRight className="w-4 h-4 text-[var(--color-japan-red)]" />
                     {f}
@@ -117,12 +117,12 @@ export default function FeaturesSection() {
             <Users className="w-8 h-8 text-[var(--color-secondary-text)] group-hover:text-[var(--color-japan-red)] transition-colors mb-auto relative z-10" />
             
             <div className="mt-8">
-              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Platform</div>
+              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Mentorship</div>
               <h3 className="font-heading text-2xl text-[var(--color-primary-text)] tracking-widest mb-4">
-                SMART<br/>JUDGE FLOW
+                EXPERT<br/>CODE REVIEWS
               </h3>
               <p className="text-sm text-[var(--color-secondary-text)] leading-relaxed">
-                Auto-assigned review queues and structured score rubrics.
+                Get your weekly milestone submissions reviewed and graded by industry professionals.
               </p>
             </div>
           </div>
@@ -140,10 +140,10 @@ export default function FeaturesSection() {
             <div className="mt-8 relative z-10">
               <div className="text-[10px] font-bold tracking-[0.25em] text-white/70 uppercase mb-2">Collaboration</div>
               <h3 className="font-heading text-2xl text-white tracking-widest mb-4">
-                TEAM<br/>WORKFLOWS
+                SQUAD UP<br/>OR FLY SOLO
               </h3>
               <p className="text-sm text-white/80 leading-relaxed">
-                Join by code, manage roles, and collaborate on challenges together.
+                Form a 4-person squad to conquer the challenges together, or walk the path of a lone Ronin.
               </p>
             </div>
           </div>
@@ -161,15 +161,15 @@ export default function FeaturesSection() {
               <div className="w-12 h-12 rounded-full border border-[var(--color-borders)] group-hover:border-[var(--color-primary-text)] flex items-center justify-center mb-6 transition-colors duration-500 text-[var(--color-primary-text)]">
                 <Rocket className="w-5 h-5" />
               </div>
-              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Management</div>
+              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Development</div>
               <h3 className="font-heading text-3xl text-[var(--color-primary-text)] tracking-widest">
-                FULL-STACK ADMINISTRATION
+                BUILD A LIVE PRODUCT
               </h3>
             </div>
             
             <div className="mt-6 md:mt-0 relative z-10 w-full md:w-auto">
               <ul className="flex flex-col gap-3">
-                {["Full CRUD Operations", "Real-Time Activity Feed", "Audit Logging & Metrics"].map((f, i) => (
+                {["From Ideation to Deployment", "Database & Authentication", "Live Pitch Demonstration"].map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm font-semibold text-[var(--color-secondary-text)] uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 bg-[var(--color-japan-red)] block"></span>
                     {f}
@@ -182,7 +182,7 @@ export default function FeaturesSection() {
           {/* 5. SQUARE FEATURE - Off White */}
           <div 
             ref={el => { if (el) cardsRef.current[4] = el; }}
-            className="col-span-1 row-span-1 bg-[var(--color-card-bg)] border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
+            className="col-span-1 md:col-span-2 lg:col-span-1 row-span-1 bg-[var(--color-card-bg)] border border-[var(--color-borders)] group hover:border-[var(--color-japan-red)] transition-colors duration-500 p-6 flex flex-col relative overflow-hidden min-w-[85vw] md:min-w-0 shrink-0 snap-center"
           >
             {/* Background Image Blend */}
             <div className="absolute inset-0 bg-[url('/images/bamboo-bg.png')] bg-cover bg-center opacity-[0.03] mix-blend-multiply group-hover:opacity-[0.06] transition-opacity duration-700"></div>
@@ -190,12 +190,12 @@ export default function FeaturesSection() {
             <Award className="w-8 h-8 text-[var(--color-secondary-text)] group-hover:text-[var(--color-japan-red)] transition-colors mb-auto relative z-10" />
             
             <div className="mt-8">
-              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Onboarding</div>
+              <div className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-2">Workflow</div>
               <h3 className="font-heading text-2xl text-[var(--color-primary-text)] tracking-widest mb-4">
-                GITHUB<br/>INTEGRATION
+                SEAMLESS<br/>SUBMISSIONS
               </h3>
               <p className="text-sm text-[var(--color-secondary-text)] leading-relaxed">
-                One-click OAuth authentication and repository submissions.
+                Link your GitHub repository to easily submit your weekly milestones in one click.
               </p>
             </div>
           </div>

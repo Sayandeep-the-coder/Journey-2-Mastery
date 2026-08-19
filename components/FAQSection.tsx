@@ -9,36 +9,36 @@ gsap.registerPlugin(ScrollTrigger);
 
 const faqs = [
   {
-    question: "What is Journey to Mastery (J2M)?",
-    answer: "Journey to Mastery is an intensive 4-week coding quest designed for developers, builders, and designers to transform a single idea into a live, scalable product with real users, supported by expert mentorship and structured weekly milestones."
+    question: "I'm a complete beginner. Is this too advanced for me?",
+    answer: "Not at all! Journey to Mastery is designed specifically to take you from a beginner to a builder. You'll learn by actually building something, and our mentors are here to help you every step of the way. If you know the basics of coding, you're ready."
   },
   {
-    question: "Who can participate in this quest?",
-    answer: "Anyone with a passion for building! Whether you are a college student, a self-taught beginner, or an experienced developer, you are welcome. The program is structured into 4 progressive levels (Ronin, Kenshi, Samurai, Shogun) that guide you from foundation to deployment."
+    question: "What exactly will we be doing for 4 weeks?",
+    answer: "You'll be building a real, working software project from scratch! Week 1 is just planning and ideas. Week 2 is building the core features. Week 3 is polishing and fixing bugs, and Week 4 is showing it off to everyone. Think of it as a 28-day guided hackathon."
   },
   {
-    question: "Can I participate individually or do I need a team?",
-    answer: "You can participate either as a solo warrior or in squads of up to 4 members. If you join solo, you can also find teammates during Week 1 (Foundation) through our community Discord and team formation channels."
+    question: "Do I need a team, or can I work alone?",
+    answer: "Both are totally fine! You can fly solo as a lone warrior, or team up with up to 3 other friends. If you don't have a team but want one, you can easily find teammates in our Discord during the first week."
   },
   {
-    question: "Is there any registration or participation fee?",
-    answer: "No, Journey to Mastery is 100% free of cost. Our goal is to empower builders with real-world shipping experience, mentorship, and platform recognition without any financial barrier."
+    question: "I don't have any project ideas right now. Is that okay?",
+    answer: "Absolutely! The entire first week (Foundation) is dedicated exactly to this. You'll brainstorm, look at real-world problems, and chat with mentors to figure out a cool, achievable idea before writing any code."
   },
   {
-    question: "What happens if I don't have an idea before the program starts?",
-    answer: "That is completely fine! Week 1 (Foundation) is dedicated to problem discovery, brainstorming, and validating concept feasibility with our mentors before writing a single line of production code."
+    question: "Do I have to pay anything to join?",
+    answer: "Nope! Journey to Mastery is 100% free. It's hosted by the Developer Community (DC KGEC) to help students and builders learn how to ship real products without any financial barriers."
   },
   {
-    question: "How does the weekly progression and leveling work?",
-    answer: "Every week corresponds to an exact 7-day stage with specific deliverables due on Sunday midnight. Once your milestone submission is reviewed by judges and mentors, your rank advances to the next warrior level."
+    question: "How much time do I need to commit every week?",
+    answer: "It's flexible, but we recommend around 10-15 hours a week. The most important thing is that every Sunday at midnight, you'll need to submit whatever milestone was set for that week to level up."
   },
   {
-    question: "What kind of mentorship and support will I receive?",
-    answer: "You will have access to 1-on-1 scheduled office hours with industry veterans, asynchronous Discord code reviews, pre-demo pitch deck audits, and technical workshops throughout the 28 days."
+    question: "What happens if I get stuck on a coding bug?",
+    answer: "You won't be stuck for long! You'll have access to our Discord community where you can ask questions anytime. Plus, you can book 1-on-1 office hours with our experienced mentors if you need deeper technical help."
   },
   {
-    question: "How are the final winners evaluated on Demo Day?",
-    answer: "Projects are judged on technical execution, innovation, UI/UX polish, problem-solution fit, and the live pitch demonstration during the final Shogun stage."
+    question: "What are these 'Levels' (Ronin, Kenshi, etc.)?",
+    answer: "It's a fun ranking system based on Japanese martial arts! Everyone starts as a 'Ronin' (Level 1). As you complete your weekly submissions, you rank up to Kenshi, Samurai, and finally Shogun when you finish your project."
   }
 ];
 
@@ -98,10 +98,10 @@ export default function FAQSection() {
       <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 relative z-10">
         
         {/* Split 2-Column FAQ Layout (faq-section-2 style) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 xl:gap-16 items-start">
           
           {/* Left Column: Heading & Support Box */}
-          <div ref={leftColRef} className="lg:col-span-5 flex flex-col items-start lg:sticky lg:top-32">
+          <div ref={leftColRef} className="xl:col-span-5 flex flex-col items-start xl:sticky xl:top-32">
             <div className="flex items-center gap-2 text-xs font-bold tracking-[0.25em] text-[var(--color-japan-red)] uppercase mb-3">
               <HelpCircle className="w-4 h-4" />
               <span>FREQUENTLY ASKED QUESTIONS</span>
@@ -154,7 +154,7 @@ export default function FAQSection() {
           </div>
 
           {/* Right Column: Accordion List */}
-          <div ref={rightColRef} className="lg:col-span-7 flex flex-col gap-3.5">
+          <div ref={rightColRef} className="xl:col-span-7 flex flex-col gap-3.5">
             {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
