@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
               <NinjaStarIcon className="h-10 w-10 text-japan-red" />
               Hall of Masters
             </h1>
-            <p className="text-secondary-text mt-4 font-medium text-lg">Top warriors ranked by honor and glory. Rankings update every 30 seconds.</p>
+            <p className="text-secondary-text mt-4 font-medium text-lg">Top warriors ranked by honor and glory. Live rankings.</p>
           </div>
         </div>
       </div>

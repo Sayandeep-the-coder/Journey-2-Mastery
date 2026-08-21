@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { redis } from "../config/redis";
-import { CACHE_KEYS, CACHE_TTL } from "../utils/constants";
+import { CACHE_KEYS } from "../utils/constants";
 import { logger } from "../logger";
 
 interface LeaderboardEntry {
@@ -15,30 +15,15 @@ interface LeaderboardEntry {
 }
 
 /**
- * Get the leaderboard from the materialized view.
- * Cached in Redis for 30-60s.
+ * Get the live leaderboard from the database view.
+ * Computed on the fly — always returns real-time scores.
  */
 export async function getLeaderboard(
   cursor?: string,
   limit = 20
 ): Promise<{ items: LeaderboardEntry[]; meta: { nextCursor: string | null; limit: number } }> {
-  // Check cache (only for first page)
-  if (!cursor) {
-    const cached = await redis.get(CACHE_KEYS.leaderboard);
-    if (cached) {
-      const parsed = JSON.parse(cached) as LeaderboardEntry[];
-      return {
-        items: parsed.slice(0, limit),
-        meta: {
-          nextCursor: parsed.length > limit ? parsed[limit - 1]?.userId ?? null : null,
-          limit,
-        },
-      };
-    }
-  }
-
   try {
-    // Query the materialized view
+    // Query the live view directly — no cache
     const conditions = cursor
       ? sql`WHERE user_id > ${cursor}`
       : sql``;
@@ -64,16 +49,6 @@ export async function getLeaderboard(
     const hasMore = entries.length > limit;
     const items = hasMore ? entries.slice(0, limit) : entries;
 
-    // Cache first page
-    if (!cursor && items.length > 0) {
-      await redis.set(
-        CACHE_KEYS.leaderboard,
-        JSON.stringify(items),
-        "EX",
-        CACHE_TTL.LEADERBOARD
-      );
-    }
-
     return {
       items,
       meta: {
@@ -82,23 +57,24 @@ export async function getLeaderboard(
       },
     };
   } catch (err) {
-    // Materialized view might not exist yet
+    // View might not exist yet
     logger.warn({ err }, "Leaderboard view query failed — view may not exist yet");
     return { items: [], meta: { nextCursor: null, limit } };
   }
 }
 
 /**
- * Refresh the leaderboard materialized view.
- * Called by the leaderboard-recalculate BullMQ job.
+ * Legacy refresh function kept for backwards compatibility.
+ * The leaderboard is now a live view so no refresh is needed.
+ * Just clears any leftover Redis cache key.
  */
 export async function refreshLeaderboard(): Promise<void> {
   try {
-    await db.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard`);
     await redis.del(CACHE_KEYS.leaderboard);
-    logger.info("Leaderboard materialized view refreshed");
+    logger.info("Leaderboard refresh called (no-op — live view)");
   } catch (err) {
-    logger.error({ err }, "Failed to refresh leaderboard materialized view");
+    logger.error({ err }, "Failed during leaderboard refresh");
     throw err;
   }
 }
+

@@ -15,7 +15,8 @@ export function useLeaderboard() {
   return useQuery<LeaderboardEntry[], Error>({
     queryKey: ['leaderboard'],
     queryFn: () => apiFetch<LeaderboardEntry[]>('/leaderboard'),
-    staleTime: 30 * 1000,
+    staleTime: 0,
+    refetchInterval: 10_000, // Live polling every 10s
   });
 }
 
@@ -30,7 +31,8 @@ export function useTeamLeaderboard() {
         return [];
       }
     },
-    staleTime: 30 * 1000,
+    staleTime: 0,
+    refetchInterval: 10_000, // Live polling every 10s
     retry: false,
   });
 }

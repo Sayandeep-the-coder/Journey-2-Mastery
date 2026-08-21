@@ -1,16 +1,16 @@
 -- ============================================
--- Leaderboard Materialized View
+-- Leaderboard Live View
 -- ============================================
 -- Derived from submissions + reviews + users + teams.
--- Refreshed via REFRESH MATERIALIZED VIEW CONCURRENTLY by the
--- leaderboard-recalculate BullMQ job, never computed live on read.
+-- Computed live on every read — no background refresh needed.
 --
 -- Run this SQL after Drizzle migrations to create the view.
 -- ============================================
 
 DROP MATERIALIZED VIEW IF EXISTS leaderboard;
+DROP VIEW IF EXISTS leaderboard;
 
-CREATE MATERIALIZED VIEW leaderboard AS
+CREATE OR REPLACE VIEW leaderboard AS
 WITH combined AS (
   -- Solo Users
   SELECT
@@ -56,16 +56,15 @@ SELECT
 FROM combined
 ORDER BY total_score DESC;
 
--- Unique index required for REFRESH MATERIALIZED VIEW CONCURRENTLY
-CREATE UNIQUE INDEX leaderboard_user_id_idx ON leaderboard (user_id);
-
 -- ============================================
--- Helper function to refresh the leaderboard
+-- Helper function (no-op for backwards compatibility)
 -- ============================================
+-- Kept so existing BullMQ jobs / admin recalculate endpoint
+-- don't crash. The view is live, so no refresh is needed.
 CREATE OR REPLACE FUNCTION refresh_leaderboard()
 RETURNS void AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard;
+  -- No-op: leaderboard is now a live view
 END;
 $$ LANGUAGE plpgsql;
 
