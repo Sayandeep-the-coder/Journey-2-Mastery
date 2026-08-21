@@ -21,7 +21,7 @@ interface Mentor {
 
 const mentors: Mentor[] = [
   {
-    name: "Sayan Chaterjee",
+    name: "Sayan Chatterjee",
     role: "Software Engineer & Mentor",
     kanji: "師",
     image: "/Judges-img/sayan.png",
@@ -33,7 +33,7 @@ const mentors: Mentor[] = [
   },
   {
     name: "Shatakshi Saha",
-    role: "Mentor",
+    role: "SDE & Mentor",
     kanji: "創",
     image: "/Judges-img/shatakshi.png",
     socials: { 
@@ -44,7 +44,7 @@ const mentors: Mentor[] = [
   },
   {
     name: "Ananya Ghosh",
-    role: "Mentor",
+    role: "SDE & Mentor",
     kanji: "基",
     image: "/Judges-img/ananya.png",
     socials: { 
@@ -55,7 +55,7 @@ const mentors: Mentor[] = [
   },
   {
     name: "Ishita Mukherjee",
-    role: "Mentor",
+    role: "SDE & Mentor",
     kanji: "美",
     image: "/Judges-img/ishita.png",
     socials: { 
