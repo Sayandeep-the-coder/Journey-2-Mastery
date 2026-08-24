@@ -86,31 +86,40 @@ export async function getActivityFeed(cursor?: string, limit = 20) {
 // ──────────────────────────────────────────────
 
 export async function getUsers(
-  filters: { role?: string; rank?: string; search?: string; cursor?: string; limit?: number } = {}
+  filters: { role?: string; rank?: string; search?: string; page?: number; limit?: number } = {}
 ) {
   const limit = filters.limit ?? 20;
+  const page = filters.page ?? 1;
+  const offset = (page - 1) * limit;
   const conditions = [];
 
   if (filters.role) conditions.push(eq(users.role, filters.role as "admin" | "judge" | "user"));
   if (filters.rank) conditions.push(eq(users.rank, filters.rank as "Ronin" | "Kenshi" | "Samurai" | "Shogun"));
   if (filters.search) conditions.push(or(ilike(users.username, `%${filters.search}%`), ilike(users.email, `%${filters.search}%`)));
-  if (filters.cursor) conditions.push(gt(users.id, filters.cursor));
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [totalCountResult] = await db
+    .select({ count: count() })
+    .from(users)
+    .where(whereClause);
+  const total = totalCountResult?.count ?? 0;
 
   const result = await db.query.users.findMany({
-    where: conditions.length > 0 ? and(...conditions) : undefined,
+    where: whereClause,
     columns: { githubAccessToken: false },
     orderBy: [asc(users.id)],
-    limit: limit + 1,
+    limit,
+    offset,
   });
 
-  const hasMore = result.length > limit;
-  const items = hasMore ? result.slice(0, limit) : result;
-
   return {
-    items,
+    items: result,
     meta: {
-      nextCursor: hasMore && items[items.length - 1] ? items[items.length - 1]!.id : null,
+      page,
       limit,
+      total,
+      totalPages: Math.ceil(total / limit),
     },
   };
 }

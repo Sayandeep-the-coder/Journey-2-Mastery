@@ -1,8 +1,15 @@
 import { toast } from 'sonner';
 
+export interface ApiPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages?: number;
+}
+
 // ─── Response Envelope ───
 export type ApiResponse<T> =
-  | { success: true; data: T; meta?: { page: number; limit: number; total: number } }
+  | { success: true; data: T; meta?: ApiPaginationMeta }
   | { success: false; error: { code: string; message: string } };
 
 // ─── Error Class ───
@@ -89,7 +96,7 @@ export async function apiFetch<T>(
 export async function apiFetchWithMeta<T>(
   path: string,
   options?: RequestInit
-): Promise<{ data: T; meta?: { page: number; limit: number; total: number } }> {
+): Promise<{ data: T; meta?: ApiPaginationMeta }> {
   const baseUrl = typeof window !== 'undefined' ? '' : (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
 
   const headers: HeadersInit = {
@@ -127,7 +134,7 @@ export async function apiFetchWithMeta<T>(
     throw new ApiError(json.error.code, msg, res.status);
   }
 
-  return { data: json.data, meta: (json as { meta?: { page: number; limit: number; total: number } }).meta };
+  return { data: json.data, meta: (json as { meta?: ApiPaginationMeta }).meta };
 }
 
 // ─── File upload helper ───

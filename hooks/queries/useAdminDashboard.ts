@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api-client';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { apiFetch, apiFetchWithMeta, type ApiPaginationMeta } from '@/lib/api-client';
 import type {
   AdminDashboardData, AdminActivity, AdminUser, User,
   Task, Submission, Review, LeaderboardEntry,
@@ -25,18 +25,45 @@ export function useAdminActivity() {
 }
 
 // ─── Users ───
-export function useAdminUsers(filters?: { role?: string; rank?: string; search?: string }) {
+export function useAdminUsers(filters?: { role?: string; rank?: string; search?: string; page?: number; limit?: number }) {
   const params = new URLSearchParams();
   if (filters?.role) params.set('role', filters.role);
   if (filters?.rank) params.set('rank', filters.rank);
   if (filters?.search) params.set('search', filters.search);
+  if (filters?.page) params.set('page', filters.page.toString());
+  if (filters?.limit) params.set('limit', filters.limit.toString());
   const qs = params.toString();
 
-  return useQuery<AdminUser[], Error>({
+  return useQuery<{ data: AdminUser[]; meta?: ApiPaginationMeta }, Error>({
     queryKey: ['admin', 'users', filters],
-    queryFn: () => apiFetch<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`),
+    queryFn: () => apiFetchWithMeta<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useInfiniteAdminUsers(filters?: { role?: string; rank?: string; search?: string; limit?: number }) {
+  const limit = filters?.limit ?? 20;
+
+  return useInfiniteQuery<{ data: AdminUser[]; meta?: ApiPaginationMeta }, Error>({
+    queryKey: ['admin', 'users', 'infinite', filters],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams();
+      if (filters?.role) params.set('role', filters.role);
+      if (filters?.rank) params.set('rank', filters.rank);
+      if (filters?.search) params.set('search', filters.search);
+      params.set('page', String(pageParam));
+      params.set('limit', String(limit));
+      const qs = params.toString();
+      return apiFetchWithMeta<AdminUser[]>(`/admin/users${qs ? `?${qs}` : ''}`);
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const meta = lastPage?.meta;
+      if (!meta || meta.totalPages === undefined) return undefined;
+      return meta.page < meta.totalPages ? meta.page + 1 : undefined;
+    },
+    staleTime: 30 * 1000,
   });
 }
 
