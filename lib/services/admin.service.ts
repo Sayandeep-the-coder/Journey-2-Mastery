@@ -270,9 +270,14 @@ export async function updateTask(
   taskId: string,
   data: UpdateTaskInput
 ) {
+  const deadline = typeof data.deadline === "string"
+    ? (data.deadline ? new Date(data.deadline) : null)
+    : data.deadline;
+  const updateData = { ...data, ...(deadline !== undefined ? { deadline } : {}) };
+
   const [updated] = await db
     .update(tasks)
-    .set(data)
+    .set(updateData)
     .where(eq(tasks.id, taskId))
     .returning();
 

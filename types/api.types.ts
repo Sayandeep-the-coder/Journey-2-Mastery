@@ -72,7 +72,7 @@ export interface Task {
   bonusPoints?: number;
   difficulty: Difficulty;
   rankRequired?: Rank;
-  deadline?: string;
+  deadline?: string | null;
   isActive?: boolean;
   status?: SubmissionStatus | 'submitted';
   rubric?: string;

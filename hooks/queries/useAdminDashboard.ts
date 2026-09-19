@@ -188,6 +188,7 @@ export function useUpdateTask() {
       apiFetch(`/admin/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 }
