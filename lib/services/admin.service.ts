@@ -7,6 +7,7 @@ import {
   reviews,
   auditLog,
   communityPosts,
+  teams,
 } from "../db/schema";
 import { notFound, badRequest } from "../utils/apiError";
 import { reassignSubmission, computeJudgeLoadScore } from "./assignment.service";
@@ -37,6 +38,7 @@ export async function getDashboard() {
     .from(users)
     .where(eq(users.role, "judge"));
   const [taskCount] = await db.select({ count: count() }).from(tasks);
+  const [teamCount] = await db.select({ count: count() }).from(teams);
 
   const statusCounts = await db
     .select({
@@ -50,6 +52,7 @@ export async function getDashboard() {
     totalUsers: userCount?.count ?? 0,
     totalJudges: judgeCount?.count ?? 0,
     totalTasks: taskCount?.count ?? 0,
+    totalTeams: teamCount?.count ?? 0,
     submissionsByStatus: Object.fromEntries(
       statusCounts.map((r) => [r.status, r.count])
     ),
@@ -843,4 +846,282 @@ export async function getJudgePerformance(judgeId: string) {
     avgTurnaroundHours,
     pendingCount,
   };
+}
+
+// ──────────────────────────────────────────────
+// Team Management (Admin)
+// ──────────────────────────────────────────────
+
+export async function getTeams(
+  filters: { search?: string; status?: string; page?: number; limit?: number } = {}
+) {
+  const limit = filters.limit ?? 20;
+  const page = filters.page ?? 1;
+  const offset = (page - 1) * limit;
+  const conditions = [];
+
+  if (filters.status && filters.status !== "all") {
+    conditions.push(eq(teams.status, filters.status));
+  }
+
+  if (filters.search && filters.search.trim()) {
+    const q = filters.search.trim();
+    // Subquery for team IDs containing matching members
+    const matchingMemberTeamIds = await db
+      .select({ teamId: users.currentTeamId })
+      .from(users)
+      .where(
+        and(
+          sql`${users.currentTeamId} IS NOT NULL`,
+          or(
+            ilike(users.username, `%${q}%`),
+            ilike(users.fullName, `%${q}%`),
+            ilike(users.email, `%${q}%`)
+          )
+        )
+      );
+
+    const memberTeamIds = matchingMemberTeamIds
+      .map((r) => r.teamId)
+      .filter((id): id is string => Boolean(id));
+
+    if (memberTeamIds.length > 0) {
+      conditions.push(
+        or(
+          ilike(teams.name, `%${q}%`),
+          ilike(teams.joinCode, `%${q}%`),
+          inArray(teams.id, memberTeamIds)
+        )
+      );
+    } else {
+      conditions.push(
+        or(
+          ilike(teams.name, `%${q}%`),
+          ilike(teams.joinCode, `%${q}%`)
+        )
+      );
+    }
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [totalResult] = await db
+    .select({ count: count() })
+    .from(teams)
+    .where(whereClause);
+
+  const teamList = await db
+    .select()
+    .from(teams)
+    .where(whereClause)
+    .orderBy(desc(teams.score), desc(teams.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  // Stats across all teams (independent of current pagination/search)
+  const [totalTeamsCount] = await db.select({ count: count() }).from(teams);
+  const [activeTeamsCount] = await db
+    .select({ count: count() })
+    .from(teams)
+    .where(eq(teams.status, "active"));
+  const [incompleteTeamsCount] = await db
+    .select({ count: count() })
+    .from(teams)
+    .where(eq(teams.status, "incomplete"));
+  const [avgScoreResult] = await db
+    .select({ avg: sql<number>`COALESCE(AVG(${teams.score}), 0)` })
+    .from(teams);
+
+  // Fetch all members for the returned teams
+  const teamIds = teamList.map((t) => t.id);
+  const teamMembers = teamIds.length > 0
+    ? await db
+        .select({
+          id: users.id,
+          username: users.username,
+          fullName: users.fullName,
+          email: users.email,
+          avatarUrl: users.avatarUrl,
+          phone: users.phone,
+          collegeName: users.collegeName,
+          branch: users.branch,
+          year: users.year,
+          bio: users.bio,
+          discord: users.discord,
+          score: users.score,
+          rank: users.rank,
+          currentTeamId: users.currentTeamId,
+          teamRole: users.teamRole,
+          teamJoinedAt: users.teamJoinedAt,
+        })
+        .from(users)
+        .where(inArray(users.currentTeamId, teamIds))
+    : [];
+
+  const items = teamList.map((t) => {
+    const members = teamMembers
+      .filter((m) => m.currentTeamId === t.id)
+      .map((m) => ({
+        id: m.id,
+        username: m.username,
+        fullName: m.fullName,
+        email: m.email,
+        avatarUrl: m.avatarUrl,
+        phone: m.phone,
+        collegeName: m.collegeName,
+        branch: m.branch,
+        year: m.year,
+        bio: m.bio,
+        discord: m.discord,
+        score: m.score,
+        rank: m.rank,
+        teamRole: (m.teamRole || "member") as "leader" | "member",
+        teamJoinedAt: m.teamJoinedAt ? m.teamJoinedAt.toISOString() : null,
+      }));
+
+    const leader = members.find((m) => m.teamRole === "leader") || members[0] || null;
+
+    return {
+      id: t.id,
+      name: t.name,
+      joinCode: t.joinCode,
+      status: t.status as "incomplete" | "active",
+      score: t.score,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
+      memberCount: members.length,
+      leader: leader
+        ? {
+            id: leader.id,
+            username: leader.username,
+            fullName: leader.fullName,
+            avatarUrl: leader.avatarUrl,
+            email: leader.email,
+          }
+        : null,
+      members,
+    };
+  });
+
+  return {
+    items,
+    stats: {
+      totalTeams: totalTeamsCount?.count ?? 0,
+      activeTeams: activeTeamsCount?.count ?? 0,
+      incompleteTeams: incompleteTeamsCount?.count ?? 0,
+      avgScore: Math.round(Number(avgScoreResult?.avg ?? 0)),
+    },
+    meta: {
+      page,
+      limit,
+      total: totalResult?.count ?? 0,
+      totalPages: Math.ceil((totalResult?.count ?? 0) / limit),
+    },
+  };
+}
+
+export async function disbandTeamAsAdmin(teamId: string, adminId: string) {
+  const [team] = await db
+    .select()
+    .from(teams)
+    .where(eq(teams.id, teamId))
+    .limit(1);
+
+  if (!team) throw notFound("Team", teamId);
+
+  await db.transaction(async (tx) => {
+    // Reset users belonging to this team to solo
+    await tx
+      .update(users)
+      .set({
+        currentTeamId: null,
+        teamRole: null,
+        teamJoinedAt: null,
+      })
+      .where(eq(users.currentTeamId, teamId));
+
+    // Delete the team record
+    await tx.delete(teams).where(eq(teams.id, teamId));
+
+    // Audit log
+    await tx.insert(auditLog).values({
+      actorId: adminId,
+      action: AUDIT_ACTIONS.TEAM_DISBANDED,
+      targetType: "team",
+      targetId: teamId,
+      metadata: { name: team.name, joinCode: team.joinCode },
+    });
+  });
+
+  return { success: true, teamId };
+}
+
+export async function removeTeamMemberAsAdmin(
+  teamId: string,
+  userId: string,
+  adminId: string
+) {
+  const [team] = await db
+    .select()
+    .from(teams)
+    .where(eq(teams.id, teamId))
+    .limit(1);
+
+  if (!team) throw notFound("Team", teamId);
+
+  const [userToRemove] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.currentTeamId, teamId)))
+    .limit(1);
+
+  if (!userToRemove) throw notFound("Member in Team", userId);
+
+  await db.transaction(async (tx) => {
+    // Reset user to solo
+    await tx
+      .update(users)
+      .set({
+        currentTeamId: null,
+        teamRole: null,
+        teamJoinedAt: null,
+      })
+      .where(eq(users.id, userId));
+
+    // Check remaining members
+    const remainingMembers = await tx
+      .select()
+      .from(users)
+      .where(eq(users.currentTeamId, teamId));
+
+    if (remainingMembers.length === 0) {
+      // If no members left, delete the team
+      await tx.delete(teams).where(eq(teams.id, teamId));
+    } else {
+      // If leader was removed, promote the remaining member to leader
+      if (userToRemove.teamRole === "leader") {
+        await tx
+          .update(users)
+          .set({ teamRole: "leader" })
+          .where(eq(users.id, remainingMembers[0]!.id));
+      }
+
+      // Update status to incomplete (since max is 2 and now only 1)
+      await tx
+        .update(teams)
+        .set({ status: "incomplete", updatedAt: new Date() })
+        .where(eq(teams.id, teamId));
+    }
+
+    // Audit log
+    await tx.insert(auditLog).values({
+      actorId: adminId,
+      action: AUDIT_ACTIONS.TEAM_MEMBER_REMOVED,
+      targetType: "team",
+      targetId: teamId,
+      metadata: { userId, username: userToRemove.username, teamName: team.name },
+    });
+  });
+
+  return { success: true, teamId, userId };
 }

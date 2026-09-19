@@ -264,6 +264,7 @@ export interface AdminDashboardData {
   totalJudges: number;
   totalTasks: number;
   totalSubmissions: number;
+  totalTeams?: number;
   statusBreakdown: { status: string; count: number }[];
   topPerformers: { userId: string; userName: string; score: number; rank: Rank }[];
   unassignedCount: number;
@@ -358,4 +359,49 @@ export interface TeamDetail {
   score: number;
   members: TeamMember[];
   joinCode?: string;
+}
+
+// ─── Admin Teams ───
+export interface AdminTeamMember {
+  id: string;
+  username: string;
+  fullName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  collegeName?: string | null;
+  branch?: string | null;
+  year?: string | null;
+  bio?: string | null;
+  discord?: string | null;
+  score: number;
+  rank: Rank;
+  teamRole: 'leader' | 'member';
+  teamJoinedAt: string | null;
+}
+
+export interface AdminTeamItem {
+  id: string;
+  name: string;
+  joinCode: string;
+  status: 'incomplete' | 'active';
+  score: number;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  leader?: {
+    id: string;
+    username: string;
+    fullName?: string | null;
+    avatarUrl?: string | null;
+    email?: string | null;
+  } | null;
+  members: AdminTeamMember[];
+}
+
+export interface AdminTeamsStats {
+  totalTeams: number;
+  activeTeams: number;
+  incompleteTeams: number;
+  avgScore: number;
 }

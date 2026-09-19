@@ -68,6 +68,8 @@ export const AUDIT_ACTIONS = {
   POST_CREATED: "post_created",
   POST_UPDATED: "post_updated",
   POST_DELETED: "post_deleted",
+  TEAM_DISBANDED: "team_disbanded",
+  TEAM_MEMBER_REMOVED: "team_member_removed",
 } as const;
 
 // ──────────────────────────────────────────────

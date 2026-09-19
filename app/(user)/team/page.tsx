@@ -393,7 +393,12 @@ export default function TeamPage() {
             <CardHeader className="border-b border-borders/50 bg-card-bg">
               <CardTitle className="text-lg font-serif flex items-center gap-2">
                 <Users className="w-5 h-5 text-japan-red" />
-                Clan Members ({team.members.length}/2)
+                Clan Members ({team.members.length}/{Math.max(team.members.length, 2)})
+                {team.members.length >= 3 && (
+                  <Badge variant="outline" className="ml-auto text-xs bg-purple-50 text-purple-700 border-purple-200">
+                    Grandfathered Trio (Eligible)
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -457,8 +462,8 @@ export default function TeamPage() {
 
         {/* Right Column (Join Code & Actions) */}
         <div className="space-y-6">
-          {/* Join Code Card (Leader Only) */}
-          {isLeader && team.joinCode && (
+          {/* Join Code Card (Leader Only - shown when clan needs members) */}
+          {isLeader && team.joinCode && team.members.length < 2 && (
             <Card className="border-borders shadow-sm bg-white/80">
               <CardHeader className="border-b border-borders/50 bg-card-bg">
                 <CardTitle className="text-base font-serif flex items-center gap-2">
@@ -497,6 +502,31 @@ export default function TeamPage() {
             </Card>
           )}
 
+          {/* Full Clan Status Card (when team is at full capacity >= 2) */}
+          {isLeader && team.members.length >= 2 && (
+            <Card className="border-borders shadow-sm bg-white/80">
+              <CardHeader className="border-b border-borders/50 bg-card-bg">
+                <CardTitle className="text-base font-serif flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-600" />
+                  Clan Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 p-6">
+                <div className="flex items-center gap-2">
+                  <Badge className={team.members.length >= 3 ? "bg-purple-600 text-white" : "bg-emerald-600 text-white"}>
+                    {team.members.length >= 3 ? "Full Trio Clan" : "Full Duo Clan"}
+                  </Badge>
+                  <span className="text-xs text-emerald-700 font-semibold">Eligible for Submissions</span>
+                </div>
+                <p className="text-xs text-secondary-text leading-relaxed">
+                  {team.members.length >= 3
+                    ? "Your clan was formed with 3 members and is grandfathered in. You are fully eligible to participate and submit tasks."
+                    : "Your clan has reached full strength (2 warriors) and is fully eligible to participate and submit tasks."}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Team Info / Stats Card */}
           <Card className="border-borders shadow-sm bg-white/80">
             <CardHeader className="border-b border-borders/50 bg-card-bg">
@@ -512,7 +542,7 @@ export default function TeamPage() {
               </div>
               <div className="flex items-center justify-between py-3">
                 <span className="text-secondary-text font-medium flex items-center gap-2"><Users className="h-5 w-5 text-indigo-500 opacity-70" /> Size</span>
-                <span className="font-bold text-lg text-primary-text">{team.members.length}/2 warriors</span>
+                <span className="font-bold text-lg text-primary-text">{team.members.length}/{Math.max(team.members.length, 2)} warriors</span>
               </div>
 
               {!isActive && (

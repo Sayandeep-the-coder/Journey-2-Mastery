@@ -14,7 +14,7 @@ import NotificationBell from '@/components/shared/NotificationBell';
 import Image from 'next/image';
 import {
   LayoutDashboard, ListChecks, Send, Trophy, FileText, User, Bell, Settings,
-  Scale, ClipboardList, Star, Users, Shield, BookOpen, BarChart3, Newspaper,
+  Scale, ClipboardList, Star, Users, Shield, Newspaper,
   FileBarChart, LogOut, Menu, PanelLeft, Home,
 } from 'lucide-react';
 import type { Role } from '@/types/api.types';
@@ -49,6 +49,7 @@ const judgeNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Users', href: '/admin/users', icon: Users },
+  { label: 'Teams', href: '/admin/teams', icon: Shield },
   { label: 'Judges', href: '/admin/judges', icon: Scale },
   { label: 'Tasks', href: '/admin/tasks', icon: ListChecks },
   { label: 'Submissions', href: '/admin/submissions', icon: Send },
