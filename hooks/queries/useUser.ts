@@ -8,6 +8,16 @@ export interface UserDashboardData {
   tasksCompleted: number;
   tasksAvailable: number;
   ranksConfig?: RankConfig[];
+  currentTask?: {
+    id: string;
+    title: string;
+    description: string;
+    shortDescription: string | null;
+    category: string;
+    difficulty: string;
+    points: number;
+    rankRequired: string;
+  } | null;
 }
 
 export function useUserDashboard() {

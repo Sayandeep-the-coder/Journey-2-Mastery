@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import type { RankConfig } from '@/types/api.types';
 
 function NinjaStarIcon({ className }: { className?: string }) {
   return (
@@ -44,7 +45,7 @@ export default function UserDashboard() {
   const ranksConfig = data?.ranksConfig || [];
 
   const currentRankName = user?.rank || 'Ronin';
-  const currentRankIndex = ranksConfig.findIndex((r: any) => r.name === currentRankName);
+  const currentRankIndex = ranksConfig.findIndex((r: RankConfig) => r.name === currentRankName);
   const currentRankData = ranksConfig[currentRankIndex !== -1 ? currentRankIndex : 0] || { name: 'Ronin', pts: 0, desc: '', diff: 'Easy' };
   const nextRank = currentRankIndex < ranksConfig.length - 1 ? ranksConfig[currentRankIndex + 1] : null;
   const rankProgressPercent = currentRankIndex === -1 ? 0 : (currentRankIndex / Math.max(ranksConfig.length - 1, 1)) * 100;
@@ -121,7 +122,7 @@ export default function UserDashboard() {
               </div>
               
               <div className="relative flex justify-between z-10">
-                {ranksConfig.map((rank: any, i: number) => {
+                {ranksConfig.map((rank: RankConfig, i: number) => {
                   const isActive = i <= currentRankIndex;
                   const Icon = getRankIcon(rank.name);
                   return (
@@ -180,47 +181,49 @@ export default function UserDashboard() {
                 </div>
 
                 <div className="pt-6 border-t border-borders/50 mt-4">
-                  <Link href="/leaderboard" className="block w-full">
-                    <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
-                      View Leaderboard <ArrowRight className="w-4 h-4" />
-                    </button>
+                  <Link 
+                    href="/leaderboard" 
+                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                  >
+                    View Leaderboard <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </>
             ) : (
-              /* Tasks Available / Next Goal State */
+              /* Tasks Available / Active Task Goal State */
               <>
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
-                      {nextRank?.diff || currentRankData.diff || 'Active'}
+                      {(data.currentTask?.difficulty || currentRankData?.diff || 'ACTIVE').toUpperCase()}
                     </span>
                     <span className="text-xs font-bold text-secondary-text font-serif">
-                      {nextRank ? `${nextRank.pts} pts goal` : 'Active Goal'}
+                      {data.currentTask ? `${data.currentTask.points} pts goal` : (nextRank ? `${nextRank.pts} pts goal` : 'Active Goal')}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-4 my-3">
                     <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
                       <Image 
-                        src={`/${(nextRank?.name || currentRankName).toLowerCase()}.png`} 
-                        alt={nextRank?.name || currentRankName} 
+                        src={`/${(data.currentTask?.rankRequired || currentRankName || 'ronin').toLowerCase()}.png`} 
+                        alt={data.currentTask?.title || currentRankName || 'Task'} 
                         fill 
                         className="object-contain p-2" 
                       />
                     </div>
                     <div>
-                      <h3 className="font-serif text-2xl font-bold text-primary-text">{nextRank?.name || currentRankData.name}</h3>
-                      <p className="text-xs text-muted-text mt-1 line-clamp-2">{nextRank?.desc || currentRankData.desc}</p>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">{data.currentTask?.title || currentRankData.name}</h3>
+                      <p className="text-xs text-muted-text mt-1 line-clamp-2">{data.currentTask?.shortDescription || data.currentTask?.description || currentRankData.desc}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-6 border-t border-borders/50 mt-4">
-                  <Link href="/tasks" className="block w-full">
-                    <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
-                      View Available Tasks ({data.tasksAvailable}) <ArrowRight className="w-4 h-4" />
-                    </button>
+                  <Link 
+                    href="/tasks" 
+                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                  >
+                    View Available Tasks ({data.tasksAvailable}) <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </>

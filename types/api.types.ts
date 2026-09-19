@@ -228,6 +228,8 @@ export interface UserDashboardData {
   rankProgress: number; // 0-100 percentage to next rank
   recentActivity: ActivityItem[];
   ranksConfig?: RankConfig[];
+  currentTask?: Task | null;
+  tasksAvailable?: number;
   stats: {
     totalPoints: number;
     tasksCompleted: number;

@@ -31,12 +31,25 @@ export async function getDashboard(userId: string) {
     .from(submissions)
     .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved")));
 
-  // Count total available tasks for user's rank
+  // Visible and active tasks for user's rank
   const availableRanks = getAvailableRanks(user.rank);
-  const [totalTasksResult] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(and(eq(tasks.isActive, true), inArray(tasks.rankRequired, availableRanks)));
+  const activeTasks = await db.query.tasks.findMany({
+    where: and(
+      eq(tasks.isActive, true),
+      inArray(tasks.rankRequired, availableRanks)
+    ),
+    orderBy: [asc(tasks.createdAt), asc(tasks.id)],
+  });
+
+  // Approved submissions to filter out completed tasks
+  const completedSubmissions = await db
+    .select({ taskId: submissions.taskId })
+    .from(submissions)
+    .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved")));
+
+  const completedTaskIds = new Set(completedSubmissions.map((s) => s.taskId));
+  const uncompletedActiveTasks = activeTasks.filter((t) => !completedTaskIds.has(t.id));
+  const currentTask = uncompletedActiveTasks[0] || null;
 
   // Total score from approved reviews
   const [scoreResult] = await db
@@ -56,7 +69,8 @@ export async function getDashboard(userId: string) {
     rank: user.rank,
     totalScore: Number(scoreResult?.totalScore ?? 0),
     tasksCompleted: completedResult?.count ?? 0,
-    tasksAvailable: (totalTasksResult?.count ?? 0) - (completedResult?.count ?? 0),
+    tasksAvailable: uncompletedActiveTasks.length,
+    currentTask,
     ranksConfig,
   };
 }
@@ -76,8 +90,11 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 
   if (!user) throw notFound("User", userId);
 
+  const availableRanks = getAvailableRanks(user.rank);
+
   const conditions = [
     eq(tasks.isActive, true),
+    inArray(tasks.rankRequired, availableRanks),
   ];
 
   if (filters.category) {
@@ -141,7 +158,7 @@ export async function getTaskCategories() {
  */
 export async function getTaskById(taskId: string) {
   const task = await db.query.tasks.findFirst({
-    where: eq(tasks.id, taskId),
+    where: and(eq(tasks.id, taskId), eq(tasks.isActive, true)),
   });
 
   if (!task) throw notFound("Task", taskId);
