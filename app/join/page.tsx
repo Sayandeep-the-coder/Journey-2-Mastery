@@ -1,58 +1,108 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, User, GraduationCap, Link as LinkIcon, MessageSquare, Mail, Phone, Briefcase, Layers, FileText, Lightbulb, Search, Users, Plus, Key } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "@/hooks/useSession";
+import { apiFetch, ApiError } from "@/lib/api-client";
+import {
+  ArrowRight,
+  User,
+  GraduationCap,
+  Link as LinkIcon,
+  MessageSquare,
+  Mail,
+  Phone,
+  Briefcase,
+  Layers,
+  FileText,
+  Lightbulb,
+  Search,
+  Users,
+  Plus,
+  Key,
+} from "lucide-react";
 
 export default function JoinPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: user } = useSession();
+
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teamAction, setTeamAction] = useState<'none' | 'create' | 'join'>('none');
   const [teamInput, setTeamInput] = useState('');
   const [teamError, setTeamError] = useState('');
   const [isTeamSubmitting, setIsTeamSubmitting] = useState(false);
-
-  const formDataRef = useRef<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, string>>({});
 
   const handleNextStep = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries()) as Record<string, string>;
-    formDataRef.current = { ...formDataRef.current, ...data };
-    
-    setStep(prev => prev + 1);
+    const fd = new FormData(e.currentTarget);
+    const data = Object.fromEntries(fd.entries()) as Record<string, string>;
+    setFormData((prev) => ({ ...prev, ...data }));
+    setStep((prev) => prev + 1);
   };
 
   const handlePreviousStep = () => {
-    setStep(prev => Math.max(1, prev - 1));
+    setStep((prev) => Math.max(1, prev - 1));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries()) as Record<string, string>;
-    const finalData = { ...formDataRef.current, ...data };
-    
+
+    const fd = new FormData(e.currentTarget);
+    const data = Object.fromEntries(fd.entries()) as Record<string, string>;
+    const finalData = { ...formData, ...data };
+    setFormData(finalData);
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalData),
-      });
-      
-      const result = await response.json();
-      if (response.ok) {
-        setStep(4);
-      } else {
-        alert(result.error || "Registration failed. Please try again.");
+      if (!user) {
+        window.location.href = '/api/v1/auth/github';
+        return;
       }
-    } catch (error) {
-      console.error("Registration Error:", error);
-      alert("An error occurred during registration.");
+
+      await apiFetch('/auth/complete-profile', {
+        method: 'POST',
+        skipRedirect: true,
+        body: JSON.stringify({
+          fullName: (finalData.name || user.fullName || user.username || '').slice(0, 100),
+          collegeName: (finalData.college || 'N/A').slice(0, 200),
+          branch: (finalData.department || 'N/A').slice(0, 100),
+          year: (finalData.experience || '1st Year').slice(0, 20),
+          phone: (finalData.phone || '0000000000').slice(0, 20),
+          bio: (
+            finalData.why
+              ? `${finalData.why}${finalData.project ? `\n\nProject idea: ${finalData.project}` : ''}`
+              : ''
+          ).slice(0, 500),
+          discord: (finalData.discord || '').slice(0, 100),
+          instagram: '',
+          twitter: (finalData.github || '').slice(0, 100),
+        }),
+      });
+
+      queryClient.setQueryData(['session'], (old: unknown) => {
+        if (old && typeof old === 'object') {
+          return { ...old, isProfileComplete: true };
+        }
+        return old;
+      });
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+
+      setStep(4);
+    } catch (err: unknown) {
+      if (err instanceof ApiError && (err.code === 'PROFILE_ALREADY_COMPLETE' || err.status === 409)) {
+        setStep(4);
+      } else if (err instanceof ApiError && err.status === 401) {
+        window.location.href = '/api/v1/auth/github';
+      } else {
+        console.error("Registration Error:", err);
+        const message = err instanceof Error ? err.message : "An error occurred during registration.";
+        alert(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -65,26 +115,26 @@ export default function JoinPage() {
 
     try {
       if (teamAction === 'create') {
-        const res = await fetch('/api/team/create', {
+        await apiFetch('/teams', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: teamInput }),
+          body: JSON.stringify({ name: teamInput.trim() }),
         });
-        const data = await res.json();
-        if (res.ok) router.push('/dashboard');
-        else setTeamError(data.error);
+        router.push('/dashboard');
       } else if (teamAction === 'join') {
-        const res = await fetch('/api/team/join', {
+        await apiFetch('/teams/join', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ teamId: teamInput }),
+          body: JSON.stringify({ code: teamInput.trim().toUpperCase() }),
         });
-        const data = await res.json();
-        if (res.ok) router.push('/dashboard');
-        else setTeamError(data.error);
+        router.push('/dashboard');
       }
-    } catch (error) {
-      setTeamError("An unexpected error occurred.");
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setTeamError(err.message);
+      } else if (err instanceof Error) {
+        setTeamError(err.message);
+      } else {
+        setTeamError("An unexpected error occurred.");
+      }
     } finally {
       setIsTeamSubmitting(false);
     }
@@ -199,18 +249,18 @@ export default function JoinPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput icon={<User className="w-4 h-4" />} label="Name *" id="name" placeholder="Your full name" required defaultValue={formDataRef.current.name} />
-                    <FormInput icon={<Mail className="w-4 h-4" />} label="Email *" id="email" type="email" placeholder="Your email address" required defaultValue={formDataRef.current.email} />
+                    <FormInput icon={<User className="w-4 h-4" />} label="Name *" id="name" placeholder="Your full name" required defaultValue={formData.name || user?.fullName || ''} />
+                    <FormInput icon={<Mail className="w-4 h-4" />} label="Email *" id="email" type="email" placeholder="Your email address" required defaultValue={formData.email || user?.email || ''} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput icon={<Phone className="w-4 h-4" />} label="Phone Number *" id="phone" type="tel" placeholder="Your phone number" required defaultValue={formDataRef.current.phone} />
-                    <FormInput icon={<MessageSquare className="w-4 h-4" />} label="Discord username *" id="discord" placeholder="yourusername" required defaultValue={formDataRef.current.discord} />
+                    <FormInput icon={<Phone className="w-4 h-4" />} label="Phone Number *" id="phone" type="tel" placeholder="Your phone number" required defaultValue={formData.phone || ''} />
+                    <FormInput icon={<MessageSquare className="w-4 h-4" />} label="Discord username *" id="discord" placeholder="yourusername" required defaultValue={formData.discord || ''} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput icon={<GraduationCap className="w-4 h-4" />} label="College name *" id="college" placeholder="Your college or institute" required defaultValue={formDataRef.current.college} />
-                    <FormInput icon={<GraduationCap className="w-4 h-4" />} label="Department *" id="department" placeholder="Example: CSE" required defaultValue={formDataRef.current.department} />
+                    <FormInput icon={<GraduationCap className="w-4 h-4" />} label="College name *" id="college" placeholder="Your college or institute" required defaultValue={formData.college || ''} />
+                    <FormInput icon={<GraduationCap className="w-4 h-4" />} label="Department *" id="department" placeholder="Example: CSE" required defaultValue={formData.department || ''} />
                   </div>
                 </div>
 
@@ -237,13 +287,13 @@ export default function JoinPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormSelect icon={<Briefcase className="w-4 h-4" />} label="Role *" id="role" options={["Select your role", "Frontend Developer", "Backend Developer", "Fullstack Developer", "Designer", "Other"]} required defaultValue={formDataRef.current.role} />
-                    <FormSelect icon={<Layers className="w-4 h-4" />} label="Experience Level *" id="experience" options={["Select your experience level", "Beginner (0-1 years)", "Intermediate (1-3 years)", "Advanced (3+ years)"]} required defaultValue={formDataRef.current.experience} />
+                    <FormSelect icon={<Briefcase className="w-4 h-4" />} label="Role *" id="role" options={["Select your role", "Frontend Developer", "Backend Developer", "Fullstack Developer", "Designer", "Other"]} required defaultValue={formData.role || ''} />
+                    <FormSelect icon={<Layers className="w-4 h-4" />} label="Experience Level *" id="experience" options={["Select your experience level", "Beginner (0-1 years)", "Intermediate (1-3 years)", "Advanced (3+ years)"]} required defaultValue={formData.experience || ''} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput icon={<LinkIcon className="w-4 h-4" />} label="Github profile link *" id="github" placeholder="https://github.com/your-handle" required defaultValue={formDataRef.current.github} />
-                    <FormInput icon={<LinkIcon className="w-4 h-4" />} label="LinkedIn profile link *" id="linkedin" placeholder="https://linkedin.com/in/your-profile" required defaultValue={formDataRef.current.linkedin} />
+                    <FormInput icon={<LinkIcon className="w-4 h-4" />} label="Github profile link *" id="github" placeholder="https://github.com/your-handle" required defaultValue={formData.github || (user?.username ? `https://github.com/${user.username}` : '')} />
+                    <FormInput icon={<LinkIcon className="w-4 h-4" />} label="LinkedIn profile link *" id="linkedin" placeholder="https://linkedin.com/in/your-profile" required defaultValue={formData.linkedin || ''} />
                   </div>
                 </div>
 
@@ -272,7 +322,7 @@ export default function JoinPage() {
                     </h3>
                   </div>
 
-                  <FormSelect icon={<Search className="w-4 h-4" />} label="How did you hear about us? *" id="source" options={["Select an option", "Twitter/X", "LinkedIn", "Friend/Colleague", "University", "Other"]} required defaultValue={formDataRef.current.source} />
+                  <FormSelect icon={<Search className="w-4 h-4" />} label="How did you hear about us? *" id="source" options={["Select an option", "Twitter/X", "LinkedIn", "Friend/Colleague", "University", "Other"]} required defaultValue={formData.source || ''} />
 
                   <div className="pt-2">
                     <label htmlFor="why" className="block font-sans text-sm font-semibold text-[#111111] mb-2 flex items-center gap-2">
@@ -284,7 +334,7 @@ export default function JoinPage() {
                       name="why"
                       placeholder="Share a short introduction about your goals..."
                       required
-                      defaultValue={formDataRef.current.why}
+                      defaultValue={formData.why || ''}
                       className="w-full bg-white border border-[#D8D0C8] rounded-lg p-4 min-h-[120px] text-[#111111] placeholder-[#A0A0A0] focus:outline-none focus:border-[#B93A32] focus:ring-2 focus:ring-[rgba(185,58,50,0.1)] transition-all resize-y"
                     />
                   </div>
@@ -301,7 +351,7 @@ export default function JoinPage() {
                       id="project"
                       name="project"
                       placeholder="Briefly describe an idea you want to build..."
-                      defaultValue={formDataRef.current.project}
+                      defaultValue={formData.project || ''}
                       className="w-full bg-white border border-[#D8D0C8] rounded-lg p-4 min-h-[100px] text-[#111111] placeholder-[#A0A0A0] focus:outline-none focus:border-[#B93A32] focus:ring-2 focus:ring-[rgba(185,58,50,0.1)] transition-all resize-y"
                     />
                   </div>
@@ -311,7 +361,7 @@ export default function JoinPage() {
                 <div className="pt-6 border-t border-[#D8D0C8] flex flex-col gap-6">
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <div className="relative flex items-center justify-center w-5 h-5 mt-0.5">
-                      <input type="checkbox" id="agreed" name="agreed" required defaultChecked={formDataRef.current.agreed === 'on'} className="peer appearance-none w-5 h-5 border border-[#D8D0C8] rounded bg-white checked:bg-[#B93A32] checked:border-[#B93A32] transition-colors cursor-pointer" />
+                      <input type="checkbox" id="agreed" name="agreed" required defaultChecked={formData.agreed === 'on'} className="peer appearance-none w-5 h-5 border border-[#D8D0C8] rounded bg-white checked:bg-[#B93A32] checked:border-[#B93A32] transition-colors cursor-pointer" />
                       <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -349,7 +399,7 @@ export default function JoinPage() {
                   </div>
                   <h3 className="font-sans font-bold text-2xl text-[#111111]">Registration Successful!</h3>
                   <p className="text-[#4A4A4A] max-w-sm mx-auto">
-                    You have successfully registered. To participate in the event, you must either join an existing team or create a new one. (Max 3 members per team).
+                    You have successfully registered. You can participate solo or as a duo with a teammate (Max 2 members per team).
                   </p>
                 </div>
 
@@ -365,7 +415,7 @@ export default function JoinPage() {
                       </div>
                       <h4 className="font-sans font-semibold text-lg">Create a Team</h4>
                     </div>
-                    <p className="text-sm text-[#777777]">Start a new team and become the leader. You'll get a unique code to share with others.</p>
+                    <p className="text-sm text-[#777777]">Start a new team and become the leader. You&apos;ll get a unique code to share with others.</p>
                   </div>
 
                   {/* Join Team Option */}
@@ -379,7 +429,7 @@ export default function JoinPage() {
                       </div>
                       <h4 className="font-sans font-semibold text-lg">Join a Team</h4>
                     </div>
-                    <p className="text-sm text-[#777777]">Have a team code? Enter it to instantly join your friends' team.</p>
+                    <p className="text-sm text-[#777777]">Have a team code? Enter it to instantly join your friends&apos; team.</p>
                   </div>
                 </div>
 
@@ -392,11 +442,13 @@ export default function JoinPage() {
                       
                       <FormInput 
                         id="teamInput" 
-                        label={teamAction === 'create' ? "Team Name" : "6-Digit Team ID"} 
+                        label={teamAction === 'create' ? "Team Name" : "Team Code"} 
                         placeholder={teamAction === 'create' ? "e.g. The Code Samurais" : "e.g. A1B2C3"} 
                         icon={teamAction === 'create' ? <Users className="w-4 h-4" /> : <Key className="w-4 h-4" />}
                         value={teamInput}
-                        onChange={(e: any) => setTeamInput(e.target.value.toUpperCase())}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setTeamInput(teamAction === 'create' ? e.target.value : e.target.value.toUpperCase())
+                        }
                         required
                       />
 
@@ -408,7 +460,7 @@ export default function JoinPage() {
 
                       <button
                         type="submit"
-                        disabled={isTeamSubmitting || !teamInput}
+                        disabled={isTeamSubmitting || !teamInput.trim()}
                         className="w-full h-[48px] bg-[#111111] hover:bg-[#B93A32] text-white rounded-lg font-sans font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isTeamSubmitting ? "Processing..." : (teamAction === 'create' ? "Create Team & Continue" : "Join Team & Continue")}
@@ -416,7 +468,7 @@ export default function JoinPage() {
                       
                       <div className="text-center mt-4">
                         <button type="button" onClick={() => router.push('/dashboard')} className="text-sm text-[#777777] hover:text-[#111111] underline underline-offset-2">
-                          Skip for now, I'll do this later from my dashboard
+                          Skip for now, I&apos;ll do this later from my dashboard
                         </button>
                       </div>
                     </div>
@@ -451,7 +503,27 @@ export default function JoinPage() {
 }
 
 // Helper Components for Form Fields
-function FormInput({ label, id, type = "text", placeholder, icon, required = false, defaultValue = "", value, onChange }: { label: string, id: string, type?: string, placeholder?: string, icon?: React.ReactNode, required?: boolean, defaultValue?: string, value?: string, onChange?: any }) {
+function FormInput({
+  label,
+  id,
+  type = "text",
+  placeholder,
+  icon,
+  required = false,
+  defaultValue = "",
+  value,
+  onChange,
+}: {
+  label: string;
+  id: string;
+  type?: string;
+  placeholder?: string;
+  icon?: React.ReactNode;
+  required?: boolean;
+  defaultValue?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
   return (
     <div>
       <label htmlFor={id} className="block font-sans text-sm font-semibold text-[#111111] mb-2">
@@ -479,7 +551,21 @@ function FormInput({ label, id, type = "text", placeholder, icon, required = fal
   );
 }
 
-function FormSelect({ label, id, options, icon, required = false, defaultValue = "" }: { label: string, id: string, options: string[], icon?: React.ReactNode, required?: boolean, defaultValue?: string }) {
+function FormSelect({
+  label,
+  id,
+  options,
+  icon,
+  required = false,
+  defaultValue = "",
+}: {
+  label: string;
+  id: string;
+  options: string[];
+  icon?: React.ReactNode;
+  required?: boolean;
+  defaultValue?: string;
+}) {
   return (
     <div>
       <label htmlFor={id} className="block font-sans text-sm font-semibold text-[#111111] mb-2">
@@ -513,4 +599,3 @@ function FormSelect({ label, id, options, icon, required = false, defaultValue =
     </div>
   );
 }
-

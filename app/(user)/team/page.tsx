@@ -218,7 +218,7 @@ export default function TeamPage() {
                 Dojo of Teams
               </h1>
               <p className="text-secondary-text mt-4 font-medium text-lg max-w-2xl">
-                Choose your path. Assemble a clan of 2 to 3 warriors to collaborate and face challenges together.
+                Choose your path. Walk the solo warrior&apos;s path or assemble a duo of 2 warriors to face challenges together.
               </p>
             </div>
           </div>
@@ -393,7 +393,7 @@ export default function TeamPage() {
             <CardHeader className="border-b border-borders/50 bg-card-bg">
               <CardTitle className="text-lg font-serif flex items-center gap-2">
                 <Users className="w-5 h-5 text-japan-red" />
-                Clan Members ({team.members.length}/3)
+                Clan Members ({team.members.length}/2)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -468,7 +468,7 @@ export default function TeamPage() {
               </CardHeader>
               <CardContent className="space-y-4 p-6">
                 <p className="text-sm text-secondary-text">
-                  Share this secret code with your allies. Up to 3 members can join.
+                  Share this secret code with your ally. Teams can have up to 2 members (Duo mode).
                 </p>
                 <div className="flex items-center gap-2 bg-secondary-bg border border-borders p-4 rounded-xl justify-between shadow-inner">
                   <span className="font-mono text-2xl font-bold tracking-[0.2em] text-primary-text select-all">
@@ -512,7 +512,7 @@ export default function TeamPage() {
               </div>
               <div className="flex items-center justify-between py-3">
                 <span className="text-secondary-text font-medium flex items-center gap-2"><Users className="h-5 w-5 text-indigo-500 opacity-70" /> Size</span>
-                <span className="font-bold text-lg text-primary-text">{team.members.length}/3 warriors</span>
+                <span className="font-bold text-lg text-primary-text">{team.members.length}/2 warriors</span>
               </div>
 
               {!isActive && (

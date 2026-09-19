@@ -265,8 +265,8 @@ export async function joinTeamByCode(userId: string, code: string) {
     columns: { id: true },
   });
 
-  if (members.length >= 3) {
-    throw new AppError("TEAM_FULL", "This team already has the maximum of 3 members.", 400);
+  if (members.length >= 2) {
+    throw new AppError("TEAM_FULL", "This team already has the maximum of 2 members (Duo mode).", 400);
   }
 
   const nextSize = members.length + 1;

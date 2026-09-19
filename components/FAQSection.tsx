@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     question: "Do I need a team, or can I work alone?",
-    answer: "Both are totally fine! You can fly solo as a lone warrior, or team up with up to 3 other friends. If you don't have a team but want one, you can easily find teammates in our Discord during the first week."
+    answer: "Both are totally fine! You can fly solo as a lone warrior, or team up as a duo with 1 friend (max 2 members per team). If you don't have a teammate but want one, you can easily find one in our Discord during the first week."
   },
   {
     question: "I don't have any project ideas right now. Is that okay?",
