@@ -22,10 +22,17 @@ import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { taskSchema, type TaskForm } from '@/lib/validators/schemas';
+import { TASK_CATEGORIES } from '@/types/api.types';
 
 export default function AdminTasksPage() {
   const { data: tasks, isLoading, isError, error, refetch } = useAdminTasks();
   const { data: categories } = useTaskCategories();
+  const categoryOptions = Array.from(
+    new Set([
+      ...TASK_CATEGORIES,
+      ...(categories?.map((c) => c.name) || []),
+    ])
+  );
   const createTask = useCreateTask();
   const deleteTask = useDeleteTask();
   const toggleAllTasks = useToggleAllTasks();
@@ -124,7 +131,14 @@ export default function AdminTasksPage() {
                 <div className="space-y-2">
                   <Label>Category</Label>
                   <Controller name="category" control={form.control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{categories?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {categoryOptions.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )} />
                   {form.formState.errors.category && <p className="text-xs text-red-600">{form.formState.errors.category.message}</p>}
                 </div>

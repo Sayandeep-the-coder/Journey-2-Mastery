@@ -33,6 +33,18 @@ export const SUBMISSION_STATUSES = [
 ] as const;
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
+export const TASK_CATEGORIES = [
+  "Frontend",
+  "Backend",
+  "Fullstack",
+  "DSA",
+  "System Design",
+  "AI/ML",
+  "DevOps",
+  "Documentation",
+] as const;
+export type TaskCategory = (typeof TASK_CATEGORIES)[number];
+
 // ──────────────────────────────────────────────
 // Tables
 // ──────────────────────────────────────────────
@@ -106,7 +118,7 @@ export const tasks = pgTable(
     title: text("title").notNull(),
     shortDescription: text("short_description").notNull().default(""),
     description: text("description").notNull(),
-    category: text("category").notNull(),
+    category: text("category", { enum: TASK_CATEGORIES }).notNull(),
     difficulty: text("difficulty", { enum: DIFFICULTIES }).notNull(),
     rankRequired: text("rank_required", { enum: RANKS })
       .notNull()

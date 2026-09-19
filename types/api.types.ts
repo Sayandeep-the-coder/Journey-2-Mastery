@@ -3,6 +3,17 @@ export type Role = 'user' | 'judge' | 'admin';
 export type Rank = 'Ronin' | 'Kenshi' | 'Samurai' | 'Shogun' | 'Team';
 export type SubmissionStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export const TASK_CATEGORIES = [
+  'Frontend',
+  'Backend',
+  'Fullstack',
+  'DSA',
+  'System Design',
+  'AI/ML',
+  'DevOps',
+  'Documentation',
+] as const;
+export type TaskCategory = (typeof TASK_CATEGORIES)[number];
 
 // ─── User ───
 export interface User {
@@ -55,7 +66,7 @@ export interface Task {
   shortDescription?: string;
   description: string;
   requirements?: string;
-  category: string;
+  category: TaskCategory | string;
   categoryName?: string;
   points: number;
   bonusPoints?: number;

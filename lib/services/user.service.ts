@@ -1,11 +1,11 @@
 import { eq, and, gt, sql, ilike, or, desc, asc, count, isNull, inArray } from "drizzle-orm";
 import { db } from "../db/client";
-import { users, tasks, submissions, reviews, sessions, teams, communityPosts } from "../db/schema";
+import { users, tasks, submissions, reviews, sessions, teams, communityPosts, TASK_CATEGORIES } from "../db/schema";
 import { notFound, forbidden, conflict, AppError } from "../utils/apiError";
 import { isRankSufficient, STATUS_PENDING, RANK_ORDER, NOTIFICATION_TYPES } from "../utils/constants";
 import { logger } from "../logger";
 import type { CreateSubmissionInput, UpdateSubmissionInput, UpdateProfileInput, TaskFilterInput } from "../validators/user.validator";
-import type { Rank } from "../db/schema";
+import type { Rank, TaskCategory } from "../db/schema";
 import { enrichReviewWithScores } from "./judge.service";
 import { assignJudge } from "./assignment.service";
 import { createNotification } from "./notification.service";
@@ -81,7 +81,7 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
   ];
 
   if (filters.category) {
-    conditions.push(eq(tasks.category, filters.category));
+    conditions.push(eq(tasks.category, filters.category as TaskCategory));
   }
   if (filters.difficulty) {
     conditions.push(eq(tasks.difficulty, filters.difficulty));
@@ -128,7 +128,12 @@ export async function getTaskCategories() {
     .groupBy(tasks.category)
     .orderBy(asc(tasks.category));
 
-  return result.map(c => ({ id: c.name, name: c.name }));
+  const categorySet = new Set<string>(TASK_CATEGORIES);
+  for (const c of result) {
+    if (c.name) categorySet.add(c.name);
+  }
+
+  return Array.from(categorySet).map((name) => ({ id: name, name }));
 }
 
 /**
