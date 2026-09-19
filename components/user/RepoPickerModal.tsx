@@ -105,6 +105,11 @@ export default function RepoPickerModal({ taskId, open, onOpenChange }: RepoPick
                     <div className="flex items-center gap-2">
                       <GitBranch className="h-4 w-4 text-muted-text shrink-0" />
                       <span className="font-medium text-primary-text truncate">{repo.name}</span>
+                      {repo.fork && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary-bg text-secondary-text border border-borders">
+                          Fork
+                        </span>
+                      )}
                     </div>
                     {repo.description && (
                       <p className="text-sm text-secondary-text mt-1 line-clamp-1">{repo.description}</p>

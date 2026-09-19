@@ -208,6 +208,7 @@ export interface RepoInfo {
   updatedAt: string;
   language?: string;
   stargazersCount?: number;
+  fork?: boolean;
 }
 
 export interface RankConfig {

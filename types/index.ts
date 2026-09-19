@@ -57,4 +57,7 @@ export interface GitHubRepo {
   htmlUrl: string;
   description: string | null;
   updatedAt: string;
+  fork?: boolean;
+  language?: string;
+  stargazersCount?: number;
 }
