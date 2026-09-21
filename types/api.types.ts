@@ -33,6 +33,9 @@ export interface User {
   discord?: string | null;
   instagram?: string | null;
   twitter?: string | null;
+  teamType?: TeamType;
+  teamName?: string | null;
+  teamMemberCount?: number;
   rank: Rank;
   score: number;
   currentTeamId?: string | null;
@@ -331,6 +334,25 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export type TeamType = 'solo' | 'duo' | 'trio';
+
+export interface LeaderboardTeamMember {
+  id?: string;
+  userId?: string;
+  username?: string;
+  userName?: string;
+  fullName?: string | null;
+  avatarUrl?: string | null;
+  rank?: Rank;
+  role?: string;
+  teamRole?: 'leader' | 'member' | null;
+  score?: number;
+  bio?: string | null;
+  collegeName?: string | null;
+  branch?: string | null;
+  discord?: string | null;
+}
+
 // ─── Leaderboard ───
 export interface LeaderboardEntry {
   rank: number;
@@ -340,6 +362,10 @@ export interface LeaderboardEntry {
   score: number;
   tasksCompleted: number;
   userRank: Rank;
+  teamType?: TeamType;
+  teamName?: string | null;
+  teamId?: string | null;
+  teamMembers?: LeaderboardTeamMember[];
   scoreBreakdown?: { category: string; points: number }[];
 }
 

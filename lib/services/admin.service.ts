@@ -111,13 +111,34 @@ export async function getUsers(
   const result = await db.query.users.findMany({
     where: whereClause,
     columns: { githubAccessToken: false },
+    with: {
+      team: {
+        columns: { id: true, name: true },
+        with: {
+          members: {
+            columns: { id: true },
+          },
+        },
+      },
+    },
     orderBy: [asc(users.id)],
     limit,
     offset,
   });
 
+  const items = result.map((u) => {
+    const memberCount = u.team?.members?.length ?? 0;
+    const teamType = memberCount >= 3 ? ("trio" as const) : memberCount === 2 ? ("duo" as const) : ("solo" as const);
+    return {
+      ...u,
+      teamType,
+      teamName: u.team?.name ?? null,
+      teamMemberCount: memberCount,
+    };
+  });
+
   return {
-    items: result,
+    items,
     meta: {
       page,
       limit,

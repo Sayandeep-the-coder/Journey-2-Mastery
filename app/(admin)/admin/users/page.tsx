@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Trash2, CheckCircle2, XCircle, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, Trash2, CheckCircle2, XCircle, ChevronDown, Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -90,8 +91,9 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="text-center">Profile</TableHead>
+                  <TableHead>Team</TableHead>
                   <TableHead>Rank</TableHead>
+                  <TableHead className="text-center">Profile</TableHead>
                   <TableHead className="text-right">Score</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -135,6 +137,37 @@ export default function AdminUsersPage() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    {/* Separate Team column */}
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        {u.teamType === 'trio' ? (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs font-semibold">
+                            Trio (3/3)
+                          </Badge>
+                        ) : u.teamType === 'duo' ? (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-semibold">
+                            Duo (2/2)
+                          </Badge>
+                        ) : u.teamName ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs font-semibold">
+                            Solo (1/2)
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-stone-50 text-stone-600 border-stone-200 text-xs font-medium">
+                            Solo
+                          </Badge>
+                        )}
+                        {u.teamName && (
+                          <span className="text-[11px] text-muted-text font-medium flex items-center gap-1">
+                            <Shield className="h-3 w-3 text-japan-red" />
+                            {u.teamName}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <RankBadge rank={u.rank} size="sm" />
+                    </TableCell>
                     <TableCell className="text-center">
                       {u.isProfileComplete ? (
                         <span title="Profile Completed" className="inline-flex justify-center">
@@ -145,9 +178,6 @@ export default function AdminUsersPage() {
                           <XCircle className="h-5 w-5 text-red-500" />
                         </span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <RankBadge rank={u.rank} size="sm" />
                     </TableCell>
                     <TableCell className="text-right font-semibold">{u.score}</TableCell>
                     <TableCell className="text-right">

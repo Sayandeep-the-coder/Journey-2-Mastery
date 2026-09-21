@@ -269,7 +269,7 @@ export function useAdminReviews() {
 export function useAdminLeaderboard() {
   return useQuery<LeaderboardEntry[], Error>({
     queryKey: ['admin', 'leaderboard'],
-    queryFn: () => apiFetch<LeaderboardEntry[]>('/admin/leaderboard'),
+    queryFn: () => apiFetch<LeaderboardEntry[]>('/admin/leaderboard?limit=200'),
     staleTime: 30 * 1000,
   });
 }
