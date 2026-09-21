@@ -1,12 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
-import type { RepoInfo, User, UserBadge, RankConfig } from '@/types/api.types';
+import type { RepoInfo, User, UserBadge, RankConfig, LeaderboardTeamMember } from '@/types/api.types';
 
 export interface UserDashboardData {
   rank: string;
   totalScore: number;
   tasksCompleted: number;
   tasksAvailable: number;
+  leaderboardRank?: number;
+  team?: {
+    id: string;
+    name: string;
+    score: number;
+    rank: number;
+    role: 'leader' | 'member';
+    memberCount: number;
+    teamType: 'solo' | 'duo' | 'trio';
+    members?: LeaderboardTeamMember[];
+  } | null;
   ranksConfig?: RankConfig[];
   currentTask?: {
     id: string;

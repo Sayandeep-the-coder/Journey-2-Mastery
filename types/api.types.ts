@@ -44,7 +44,14 @@ export interface User {
   team?: {
     id: string;
     name: string;
-    joinCode: string;
+    joinCode?: string;
+    score?: number;
+    rank?: number;
+    status?: string;
+    teamRole?: string;
+    memberCount?: number;
+    teamType?: TeamType;
+    members?: LeaderboardTeamMember[];
   } | null;
   createdAt?: string;
 }
