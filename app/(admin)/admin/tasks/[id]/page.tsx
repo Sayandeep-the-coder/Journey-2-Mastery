@@ -11,11 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { Task, Difficulty, Rank, TaskCategory } from '@/types/api.types';
+import type { Task, Difficulty, Rank, TaskCategory, ReviewCriterion } from '@/types/api.types';
 import { TASK_CATEGORIES } from '@/types/api.types';
 
 function EditForm({ task, id }: { task: Task; id: string }) {
@@ -31,6 +31,20 @@ function EditForm({ task, id }: { task: Task; id: string }) {
   const [bonusPoints, setBonusPoints] = useState(task.bonusPoints || 0);
   const [deadline, setDeadline] = useState(task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '');
   const [isActive, setIsActive] = useState(task.isActive ?? true);
+  const [criteria, setCriteria] = useState<ReviewCriterion[]>(
+    task.criteria && task.criteria.length > 0
+      ? task.criteria
+      : [
+          { id: "codeQuality", name: "Code Quality", maxScore: 25, description: "Clean, readable, well-structured code" },
+          { id: "functionality", name: "Functionality", maxScore: 25, description: "All requirements met and working" },
+          { id: "documentation", name: "Documentation", maxScore: 15, description: "README, comments, and code documentation" },
+          { id: "testing", name: "Testing", maxScore: 15, description: "Test coverage and test quality" },
+          { id: "creativity", name: "Creativity", maxScore: 20, description: "Innovation, UX, and going above requirements" },
+        ]
+  );
+  const [passingScore, setPassingScore] = useState<number>(task.passingScore ?? 50);
+
+  const totalMaxCriteria = criteria.reduce((sum, c) => sum + (Number(c.maxScore) || 0), 0);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'description' | 'requirements') => {
     const file = e.target.files?.[0];
@@ -46,7 +60,52 @@ function EditForm({ task, id }: { task: Task; id: string }) {
     reader.readAsText(file);
   };
 
+  const handleUpdateCriterion = (index: number, field: keyof ReviewCriterion, value: any) => {
+    setCriteria((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c))
+    );
+  };
+
+  const handleAddCriterion = () => {
+    setCriteria((prev) => [
+      ...prev,
+      {
+        id: `criterion_${Date.now()}`,
+        name: '',
+        description: '',
+        maxScore: 10,
+      },
+    ]);
+  };
+
+  const handleRemoveCriterion = (index: number) => {
+    if (criteria.length <= 1) {
+      toast.error('Task must have at least one judging criterion');
+      return;
+    }
+    setCriteria((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = () => {
+    if (criteria.length === 0) {
+      toast.error('At least one criterion is required');
+      return;
+    }
+    if (criteria.some((c) => !c.name.trim())) {
+      toast.error('All criteria must have a name');
+      return;
+    }
+    if (passingScore <= 0 || passingScore > totalMaxCriteria) {
+      toast.error(`Approval lowest score must be between 1 and ${totalMaxCriteria}`);
+      return;
+    }
+
+    const formattedCriteria = criteria.map((c, idx) => ({
+      ...c,
+      id: c.id?.trim() ? c.id : (c.name.toLowerCase().replace(/[^a-z0-9]/g, '') || `criterion_${idx + 1}`),
+      maxScore: Number(c.maxScore) || 1,
+    }));
+
     updateTask.mutate(
       { 
         id, 
@@ -60,7 +119,9 @@ function EditForm({ task, id }: { task: Task; id: string }) {
         points, 
         bonusPoints, 
         deadline: deadline ? new Date(deadline).toISOString() : null, 
-        isActive 
+        isActive,
+        criteria: formattedCriteria,
+        passingScore: Number(passingScore),
       },
       { 
         onSuccess: () => toast.success('Task updated'),
@@ -146,6 +207,101 @@ function EditForm({ task, id }: { task: Task; id: string }) {
           <div><Label>Active</Label><p className="text-xs text-muted-text">Allow new submissions</p></div>
           <Switch checked={isActive} onCheckedChange={setIsActive} />
         </div>
+        {/* Judging Criteria & Rubric */}
+        <div className="space-y-3 pt-3 border-t border-borders">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-semibold">Judging Criteria & Rubric</Label>
+              <p className="text-xs text-muted-text">Customize scoring criteria and max points for evaluating submissions</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddCriterion}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Criterion
+            </Button>
+          </div>
+
+          <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+            {criteria.map((crit, idx) => (
+              <div key={idx} className="p-3 border border-borders rounded-lg bg-card-bg space-y-2 relative">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={crit.name}
+                      onChange={(e) => handleUpdateCriterion(idx, 'name', e.target.value)}
+                      placeholder="Criterion Name (e.g. Code Quality)"
+                      className="h-8 text-xs font-medium"
+                    />
+                  </div>
+                  <div className="w-28 flex items-center gap-1 shrink-0">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={crit.maxScore}
+                      onChange={(e) => handleUpdateCriterion(idx, 'maxScore', Math.max(1, parseInt(e.target.value) || 1))}
+                      placeholder="Max"
+                      className="h-8 text-xs text-center"
+                    />
+                    <span className="text-xs text-muted-text">pts</span>
+                  </div>
+                  {criteria.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-text hover:text-red-600 shrink-0"
+                      onClick={() => handleRemoveCriterion(idx)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <Input
+                  value={crit.description || ''}
+                  onChange={(e) => handleUpdateCriterion(idx, 'description', e.target.value)}
+                  placeholder="Evaluation description (e.g. Clean, readable code)"
+                  className="h-7 text-[11px] text-muted-text"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Criteria Summary & Passing Threshold */}
+          <div className="p-3 bg-secondary-bg rounded-lg border border-borders space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-secondary-text font-medium">Total Maximum Score:</span>
+              <span className="font-bold text-sm text-japan-red">{totalMaxCriteria} pts</span>
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-borders">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Approval Lowest Score (Passing Score)</Label>
+                <span className="text-[11px]">
+                  {passingScore > 0 && passingScore <= totalMaxCriteria ? (
+                    <span className="text-emerald-600 font-medium">Valid threshold</span>
+                  ) : (
+                    <span className="text-red-600 font-medium">Must be 1 – {totalMaxCriteria} pts</span>
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalMaxCriteria || 1000}
+                  value={passingScore}
+                  onChange={(e) => setPassingScore(parseInt(e.target.value) || 0)}
+                  className="h-8 text-sm w-32"
+                />
+                <span className="text-xs text-muted-text">/ {totalMaxCriteria} points minimum required to approve</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <Button onClick={handleSave} disabled={updateTask.isPending} className="w-full">
           <Save className="h-4 w-4 mr-2" />{updateTask.isPending ? 'Saving...' : 'Save Changes'}
         </Button>

@@ -73,6 +73,9 @@ export default function JudgeReviewDetailPage() {
           <CardHeader><CardTitle>Edit Review</CardTitle></CardHeader>
           <CardContent>
             <ScoreRubricForm
+              taskId={(review as any).submission?.taskId}
+              passingScore={(review as any).submission?.task?.passingScore ?? 50}
+              initialCriteria={(review as any).submission?.task?.criteria}
               onSubmit={handleUpdate}
               isPending={updateReview.isPending}
               initialScores={review.scores.map((s) => ({ criterionId: s.criterionId, score: s.score }))}

@@ -29,7 +29,13 @@ export const updateProfileSchema = z.object({
 }).strict();
 export type UpdateProfileForm = z.infer<typeof updateProfileSchema>;
 
-// ─── Task Management (Admin) ───
+export const taskCriterionSchema = z.object({
+  id: z.string().min(1, 'Criterion ID is required'),
+  name: z.string().min(1, 'Criterion name is required'),
+  description: z.string().optional().default(''),
+  maxScore: z.coerce.number().min(1, 'Max points must be at least 1'),
+});
+
 export const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
   shortDescription: z.string().min(5, 'Short description is required').max(500),
@@ -41,7 +47,12 @@ export const taskSchema = z.object({
   bonusPoints: z.coerce.number().min(0).default(0),
   rankRequired: z.enum(['Ronin', 'Kenshi', 'Samurai', 'Shogun']).optional(),
   deadline: z.string().optional(),
-}).strict();
+  criteria: z.array(taskCriterionSchema).min(1, 'At least one judging criterion is required'),
+  passingScore: z.coerce.number().min(1, 'Approval lowest score must be at least 1'),
+}).refine(
+  (data) => data.passingScore <= data.criteria.reduce((sum, c) => sum + (Number(c.maxScore) || 0), 0),
+  { message: 'Approval lowest score cannot exceed total maximum criteria score', path: ['passingScore'] }
+);
 export type TaskForm = z.infer<typeof taskSchema>;
 
 // ─── Review Submission (Judge) ───

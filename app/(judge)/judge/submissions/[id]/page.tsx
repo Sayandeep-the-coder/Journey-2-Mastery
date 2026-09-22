@@ -71,12 +71,13 @@ export default function JudgeSubmissionDetailPage() {
       {(submission.status === 'pending' || submission.status === 'in_review') && (
         <Card>
           <CardHeader><CardTitle>Score & Review</CardTitle></CardHeader>
-          <CardContent>
             <ScoreRubricForm
+              taskId={submission.taskId}
+              passingScore={submission.task?.passingScore ?? 50}
+              initialCriteria={submission.task?.criteria}
               onSubmit={handleReviewSubmit}
               isPending={submitReview.isPending}
             />
-          </CardContent>
         </Card>
       )}
 

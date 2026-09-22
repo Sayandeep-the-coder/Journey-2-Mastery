@@ -182,6 +182,48 @@ export default function TaskDetailPage() {
                     <MarkdownPreview content={task.rubric} />
                   </section>
                 )}
+
+                {task.criteria && task.criteria.length > 0 && (
+                  <section className="mt-10 pt-10 border-t border-borders">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                      <div>
+                        <h3 className="text-base font-bold text-primary-text flex items-center gap-2">
+                          <Star className="w-4 h-4 text-japan-red" />
+                          Judging Criteria & Evaluation Rubric
+                        </h3>
+                        <p className="text-xs text-muted-text mt-0.5">
+                          How judges will evaluate and score your submission
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary-bg border border-borders text-primary-text">
+                          Passing Score: <span className="text-japan-red font-bold">{task.passingScore ?? 50}</span> / {task.criteria.reduce((sum, c) => sum + (c.maxScore || 0), 0)} pts
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {task.criteria.map((criterion) => (
+                        <div
+                          key={criterion.id}
+                          className="p-4 rounded-lg border border-borders bg-card-bg flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h4 className="text-xs font-bold text-primary-text">{criterion.name}</h4>
+                              <span className="text-[11px] font-bold text-japan-red bg-japan-red/10 px-2 py-0.5 rounded">
+                                {criterion.maxScore} pts
+                              </span>
+                            </div>
+                            {criterion.description && (
+                              <p className="text-xs text-muted-text">{criterion.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
 
               {/* Deliverables Section */}

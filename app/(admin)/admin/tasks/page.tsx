@@ -19,10 +19,18 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { taskSchema, type TaskForm } from '@/lib/validators/schemas';
 import { TASK_CATEGORIES } from '@/types/api.types';
+
+const defaultCriteria = [
+  { id: "codeQuality", name: "Code Quality", maxScore: 25, description: "Clean, readable, well-structured code" },
+  { id: "functionality", name: "Functionality", maxScore: 25, description: "All requirements met and working" },
+  { id: "documentation", name: "Documentation", maxScore: 15, description: "README, comments, and code documentation" },
+  { id: "testing", name: "Testing", maxScore: 15, description: "Test coverage and test quality" },
+  { id: "creativity", name: "Creativity", maxScore: 20, description: "Innovation, UX, and going above requirements" },
+];
 
 export default function AdminTasksPage() {
   const { data: tasks, isLoading, isError, error, refetch } = useAdminTasks();
@@ -39,7 +47,23 @@ export default function AdminTasksPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const form = useForm<TaskForm>({ resolver: zodResolver(taskSchema) as any, defaultValues: { bonusPoints: 0 } });
+  const form = useForm<TaskForm>({
+    resolver: zodResolver(taskSchema) as any,
+    defaultValues: {
+      bonusPoints: 0,
+      criteria: defaultCriteria,
+      passingScore: 50,
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "criteria",
+  });
+
+  const watchedCriteria = form.watch('criteria') || [];
+  const totalMaxCriteria = watchedCriteria.reduce((sum, c) => sum + (Number(c.maxScore) || 0), 0);
+  const watchedPassingScore = form.watch('passingScore') || 0;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'description' | 'requirements') => {
     const file = e.target.files?.[0];
@@ -53,11 +77,25 @@ export default function AdminTasksPage() {
   };
 
   const handleCreate = (data: TaskForm) => {
-    createTask.mutate(data, {
+    const formattedData = {
+      ...data,
+      criteria: data.criteria.map((c, i) => ({
+        ...c,
+        id: c.id?.trim() ? c.id : (c.name.toLowerCase().replace(/[^a-z0-9]/g, '') || `criterion_${i + 1}`),
+        maxScore: Number(c.maxScore) || 0,
+      })),
+      passingScore: Number(data.passingScore),
+    };
+
+    createTask.mutate(formattedData as any, {
       onSuccess: () => {
         toast.success('Task created');
         setDialogOpen(false);
-        form.reset();
+        form.reset({
+          bonusPoints: 0,
+          criteria: defaultCriteria,
+          passingScore: 50,
+        });
       },
       onError: (err) => toast.error(err.message),
     });
@@ -174,6 +212,107 @@ export default function AdminTasksPage() {
               <div className="space-y-2">
                 <Label>Deadline</Label>
                 <Input type="datetime-local" {...form.register('deadline')} />
+              </div>
+
+              {/* Judging Criteria & Rubric */}
+              <div className="space-y-3 pt-3 border-t border-borders">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold">Judging Criteria & Rubric *</Label>
+                    <p className="text-xs text-muted-text">Define scoring criteria and max points for evaluating submissions</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ id: `criterion_${Date.now()}`, name: '', description: '', maxScore: 10 })}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Criterion
+                  </Button>
+                </div>
+
+                {form.formState.errors.criteria?.message && (
+                  <p className="text-xs text-red-600 font-medium">{form.formState.errors.criteria.message}</p>
+                )}
+
+                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                  {fields.map((field, idx) => (
+                    <div key={field.id} className="p-3 border border-borders rounded-lg bg-card-bg space-y-2 relative">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Input
+                            {...form.register(`criteria.${idx}.name` as const)}
+                            placeholder="Criterion Name (e.g. Code Quality)"
+                            className="h-8 text-xs font-medium"
+                          />
+                          {form.formState.errors.criteria?.[idx]?.name && (
+                            <p className="text-[11px] text-red-600 mt-0.5">{form.formState.errors.criteria[idx]?.name?.message}</p>
+                          )}
+                        </div>
+                        <div className="w-28 flex items-center gap-1 shrink-0">
+                          <Input
+                            type="number"
+                            min={1}
+                            {...form.register(`criteria.${idx}.maxScore` as const, { valueAsNumber: true })}
+                            placeholder="Max"
+                            className="h-8 text-xs text-center"
+                          />
+                          <span className="text-xs text-muted-text">pts</span>
+                        </div>
+                        {fields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-text hover:text-red-600 shrink-0"
+                            onClick={() => remove(idx)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                      <Input
+                        {...form.register(`criteria.${idx}.description` as const)}
+                        placeholder="Evaluation description (e.g. Clean, readable code)"
+                        className="h-7 text-[11px] text-muted-text"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Criteria Summary & Passing Threshold */}
+                <div className="p-3 bg-secondary-bg rounded-lg border border-borders space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-secondary-text font-medium">Total Maximum Score:</span>
+                    <span className="font-bold text-sm text-japan-red">{totalMaxCriteria} pts</span>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-borders">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">Approval Lowest Score (Passing Score) *</Label>
+                      <span className="text-[11px]">
+                        {watchedPassingScore > 0 && watchedPassingScore <= totalMaxCriteria ? (
+                          <span className="text-emerald-600 font-medium">Valid threshold</span>
+                        ) : (
+                          <span className="text-red-600 font-medium">Must be 1 – {totalMaxCriteria} pts</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={totalMaxCriteria || 1000}
+                        {...form.register('passingScore', { valueAsNumber: true })}
+                        className="h-8 text-sm w-32"
+                      />
+                      <span className="text-xs text-muted-text">/ {totalMaxCriteria} points minimum required to approve</span>
+                    </div>
+                    {form.formState.errors.passingScore && (
+                      <p className="text-xs text-red-600 font-medium">{form.formState.errors.passingScore.message}</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <Button type="submit" className="w-full mt-4" disabled={createTask.isPending}>{createTask.isPending ? 'Creating...' : 'Create Task'}</Button>

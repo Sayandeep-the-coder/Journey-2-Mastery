@@ -86,6 +86,8 @@ export interface Task {
   isActive?: boolean;
   status?: SubmissionStatus | 'submitted';
   rubric?: string;
+  criteria?: ReviewCriterion[];
+  passingScore?: number;
   createdAt?: string;
   updatedAt?: string;
 }

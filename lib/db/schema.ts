@@ -128,6 +128,8 @@ export const tasks = pgTable(
     deadline: timestamp("deadline", { withTimezone: true }),
     participantsCount: integer("participants_count").notNull().default(0),
     requirements: text("requirements"),
+    criteria: jsonb("criteria"),
+    passingScore: integer("passing_score").notNull().default(50),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
