@@ -12,11 +12,12 @@ import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText, Star, ChevronRight, MessageSquare, Shield } from 'lucide-react';
+import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText, Star, ChevronRight, MessageSquare, Shield, GitBranch } from 'lucide-react';
 import MarkdownPreview from '@/components/shared/MarkdownPreview';
 import CommentThread from '@/components/shared/CommentThread';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -44,7 +45,7 @@ export default function TaskDetailPage() {
   const RANK_ORDER = ['Ronin', 'Kenshi', 'Samurai', 'Shogun'];
   const userRankIdx = RANK_ORDER.indexOf(user?.rank || 'Ronin');
   const taskRankIdx = RANK_ORDER.indexOf(task?.rankRequired || 'Ronin');
-  const userHasRank = userRankIdx >= taskRankIdx;
+  const userHasRank = task?.track === 'web3' ? true : userRankIdx >= taskRankIdx;
 
   const handleSubmit = () => {
     if (!selectedRepo || isSubmitted || !canSubmit) return;
@@ -105,17 +106,22 @@ export default function TaskDetailPage() {
               {task.shortDescription || `${task.categoryName || task.category || 'Challenge'} Task`}
             </p>
             
-            <div className="flex items-center gap-6 text-sm text-secondary-text font-semibold">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-secondary-text font-semibold">
               <div className="flex items-center gap-2">
                 <BarChart className="w-4 h-4 text-muted-text" />
                 <span className="capitalize">{task.difficulty || 'Intermediate'}</span>
               </div>
-              {task.rankRequired && (
+              {task.track === 'web3' ? (
+                <div className="flex items-center gap-2 text-secondary-text font-sans text-xs font-semibold bg-secondary-bg px-2.5 py-1 rounded-md border border-borders shadow-xs">
+                  <GitBranch className="w-3.5 h-3.5 text-japan-red" />
+                  <span>Web3 Track • {task.taskType ? task.taskType : 'Challenge'}</span>
+                </div>
+              ) : task.rankRequired ? (
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-text" />
                   <span>Rank: {task.rankRequired}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -491,23 +497,40 @@ export default function TaskDetailPage() {
             </div>
           </div>
 
-          {/* Journey Stage Card */}
-          {task.rankRequired && (
-            <div className="bg-card-bg border border-borders rounded-xl p-8 relative overflow-hidden shadow-sm">
-               <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none translate-x-4 translate-y-4">
-                 <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path></svg>
-               </div>
-              <h3 className="text-sm font-bold tracking-widest uppercase mb-6 text-primary-text relative z-10">Journey Stage</h3>
-              <div className="flex items-center gap-5 relative z-10">
-                <div className="w-14 h-14 rounded-full border-[2px] border-primary-text flex items-center justify-center text-primary-text bg-white">
+          {/* Journey Stage or Web3 Track Card */}
+          <div className="bg-card-bg border border-borders rounded-xl p-8 relative overflow-hidden shadow-sm">
+             <div className="absolute right-0 bottom-0 opacity-5 pointer-events-none translate-x-4 translate-y-4">
+               <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path></svg>
+             </div>
+            <h3 className="text-sm font-bold tracking-widest uppercase mb-6 text-primary-text relative z-10">
+              {task.track === 'web3' ? 'Track Domain' : 'Journey Stage'}
+            </h3>
+            <div className="flex items-center gap-5 relative z-10">
+              <div className={cn(
+                "w-14 h-14 rounded-full border-[2px] flex items-center justify-center bg-white border-primary-text text-primary-text"
+              )}>
+                 {task.track === 'web3' ? (
+                   <GitBranch className="w-7 h-7 text-primary-text" />
+                 ) : (
                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path></svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-japan-red text-xl uppercase tracking-widest leading-tight">{task.rankRequired}</h4>
-                </div>
+                 )}
+              </div>
+              <div>
+                <h4 className="font-bold text-xl uppercase tracking-widest leading-tight text-primary-text">
+                  {task.track === 'web3' ? (task.taskType || 'Web3 Challenge') : task.rankRequired}
+                </h4>
+                {task.track === 'web3' ? (
+                  <span className="text-xs text-muted-text font-medium block mt-1">
+                    Web3 Side Track • Unlocked for all warriors
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-text font-medium block mt-1">
+                    Martial rank required
+                  </span>
+                )}
               </div>
             </div>
-          )}
+          </div>
           
         </div>
         )}

@@ -48,6 +48,8 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
  * Query params for GET /api/v1/user/tasks
  */
 export const taskFilterSchema = z.object({
+  track: z.enum(["main", "web3", "all"]).optional(),
+  taskType: z.string().optional(),
   category: z.string().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   search: z.string().optional(),

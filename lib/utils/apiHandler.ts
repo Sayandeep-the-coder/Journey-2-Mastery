@@ -7,11 +7,11 @@ type ApiHandlerOptions = {
   rateLimitType?: keyof typeof rateLimitConfigs;
 };
 
-export function apiHandler(
-  handler: (req: Request, ...args: any[]) => Promise<NextResponse | Response>,
+export function apiHandler<TArgs extends unknown[] = unknown[]>(
+  handler: (req: Request, ...args: TArgs) => Promise<NextResponse | Response>,
   options: ApiHandlerOptions = { rateLimitType: 'public' }
 ) {
-  return async (req: Request, ...args: any[]): Promise<NextResponse | Response> => {
+  return async (req: Request, ...args: TArgs): Promise<NextResponse | Response> => {
     try {
       // 1. Rate Limiting
       if (options.rateLimitType) {
@@ -25,8 +25,6 @@ export function apiHandler(
       // 2. Execute Handler
       return await handler(req, ...args);
     } catch (error: unknown) {
-      console.error("[API_ERROR]", error);
-
       // Handle Zod validation errors gracefully
       if (error instanceof ZodError) {
         return NextResponse.json(
@@ -45,6 +43,11 @@ export function apiHandler(
       const err = error as Error & { statusCode?: number; code?: string; isOperational?: boolean };
       const isOperational = error instanceof AppError || err.isOperational;
       const status = err.statusCode || 500;
+
+      // Only log stack traces for unexpected 5xx server errors
+      if (status >= 500) {
+        console.error("[API_ERROR]", error);
+      }
       
       const message = (!isOperational && status === 500) 
         ? "An unexpected server error occurred." 

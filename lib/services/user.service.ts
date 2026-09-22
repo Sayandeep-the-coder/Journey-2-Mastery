@@ -147,11 +147,12 @@ export async function getDashboard(userId: string) {
     }
   }
 
-  // Visible and active tasks for user's rank
+  // Visible and active tasks for user's rank on the main line
   const availableRanks = getAvailableRanks(effectiveRank);
   const activeTasks = await db.query.tasks.findMany({
     where: and(
       eq(tasks.isActive, true),
+      eq(tasks.track, "main"),
       inArray(tasks.rankRequired, availableRanks)
     ),
     orderBy: [asc(tasks.createdAt), asc(tasks.id)],
@@ -198,9 +199,31 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 
   const conditions = [
     eq(tasks.isActive, true),
-    inArray(tasks.rankRequired, availableRanks),
   ];
 
+  if (filters.track === "web3") {
+    conditions.push(eq(tasks.track, "web3"));
+  } else if (filters.track === "main") {
+    conditions.push(
+      eq(tasks.track, "main"),
+      inArray(tasks.rankRequired, availableRanks)
+    );
+  } else {
+    // All tracks: Web3 tasks are open to all, main tasks require available rank
+    conditions.push(
+      or(
+        eq(tasks.track, "web3"),
+        and(
+          eq(tasks.track, "main"),
+          inArray(tasks.rankRequired, availableRanks)
+        )
+      )!
+    );
+  }
+
+  if (filters.taskType) {
+    conditions.push(eq(tasks.taskType, filters.taskType));
+  }
   if (filters.category) {
     conditions.push(eq(tasks.category, filters.category as TaskCategory));
   }
@@ -361,7 +384,7 @@ export async function createSubmission(userId: string, data: CreateSubmissionInp
 
   if (!user) throw notFound("User", userId);
 
-  if (!isRankSufficient(user.rank, task.rankRequired as Rank)) {
+  if (task.track !== "web3" && !isRankSufficient(user.rank, task.rankRequired as Rank)) {
     throw new AppError("RANK_REQUIREMENT_NOT_MET", `Your rank (${user.rank}) is insufficient for this task. Required: ${task.rankRequired}`, 403);
   }
 

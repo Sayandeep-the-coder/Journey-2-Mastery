@@ -4,6 +4,8 @@ import type { Task, Category, Submission } from '@/types/api.types';
 import { TASK_CATEGORIES } from '@/types/api.types';
 
 interface TaskFilters {
+  track?: string;
+  taskType?: string;
   category?: string;
   difficulty?: string;
   search?: string;
@@ -11,6 +13,8 @@ interface TaskFilters {
 
 function buildTaskQuery(filters?: TaskFilters): string {
   const params = new URLSearchParams();
+  if (filters?.track) params.set('track', filters.track);
+  if (filters?.taskType) params.set('taskType', filters.taskType);
   if (filters?.category) params.set('category', filters.category);
   if (filters?.difficulty) params.set('difficulty', filters.difficulty);
   if (filters?.search) params.set('search', filters.search);

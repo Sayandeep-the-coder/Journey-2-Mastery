@@ -29,5 +29,21 @@ export const GET = apiHandler(async (req: Request) => {
     { id: "testing", name: "Testing", maxScore: 15, description: "Test coverage and test quality" },
     { id: "creativity", name: "Creativity", maxScore: 20, description: "Innovation, UX, and going above requirements" },
   ];
-  return NextResponse.json({ success: true, data: defaultCriteriaList, passingScore: 50 });
+
+  const web3DefaultCriteriaList = [
+    { id: "security", name: "Contract Security & Safety", maxScore: 25, description: "Reentrancy guards, access controls, audit rigor" },
+    { id: "gasOptimization", name: "Gas Efficiency & Performance", maxScore: 20, description: "Optimized storage, opcode efficiency, calldata usage" },
+    { id: "functionality", name: "Protocol & dApp Logic", maxScore: 25, description: "Smart contract methods, state transitions, events" },
+    { id: "testing", name: "Testing (Hardhat / Foundry)", maxScore: 15, description: "Fuzzing, unit and integration test coverage" },
+    { id: "documentation", name: "Documentation & NatSpec", maxScore: 15, description: "NatSpec comments, diagram, deployment instructions" },
+  ];
+
+  const trackParam = url.searchParams.get("track");
+  const isWeb3 = trackParam === "web3";
+
+  return NextResponse.json({
+    success: true,
+    data: isWeb3 ? web3DefaultCriteriaList : defaultCriteriaList,
+    passingScore: 50,
+  });
 });

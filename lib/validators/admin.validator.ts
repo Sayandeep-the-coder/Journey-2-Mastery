@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TASK_CATEGORIES } from "../db/schema";
+import { TASK_CATEGORIES, TRACKS } from "../db/schema";
 
 export const criterionSchema = z.object({
   id: z.string().min(1, "Criterion ID is required"),
@@ -16,6 +16,8 @@ export const createTaskSchema = z.object({
   shortDescription: z.string().min(5).max(500),
   description: z.string().min(10),
   requirements: z.string().optional(),
+  track: z.enum(TRACKS).default("main"),
+  taskType: z.string().optional(),
   category: z.enum(TASK_CATEGORIES),
   difficulty: z.enum(["easy", "medium", "hard"]),
   rankRequired: z.enum(["Ronin", "Kenshi", "Samurai", "Shogun"]).default("Ronin"),
@@ -39,6 +41,8 @@ export const updateTaskSchema = z.object({
   shortDescription: z.string().min(5).max(500).optional(),
   description: z.string().min(10).optional(),
   requirements: z.string().optional(),
+  track: z.enum(TRACKS).optional(),
+  taskType: z.string().optional().nullable(),
   category: z.enum(TASK_CATEGORIES).optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   rankRequired: z.enum(["Ronin", "Kenshi", "Samurai", "Shogun"]).optional(),

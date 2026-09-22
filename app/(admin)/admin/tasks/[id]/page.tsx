@@ -15,8 +15,8 @@ import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { Task, Difficulty, Rank, TaskCategory, ReviewCriterion } from '@/types/api.types';
-import { TASK_CATEGORIES } from '@/types/api.types';
+import type { Task, Difficulty, Rank, TaskCategory, ReviewCriterion, Track } from '@/types/api.types';
+import { TASK_CATEGORIES, TRACKS, WEB3_TASK_TYPES } from '@/types/api.types';
 
 function EditForm({ task, id }: { task: Task; id: string }) {
   const updateTask = useUpdateTask();
@@ -24,6 +24,8 @@ function EditForm({ task, id }: { task: Task; id: string }) {
   const [shortDescription, setShortDescription] = useState(task.shortDescription || '');
   const [description, setDescription] = useState(task.description);
   const [requirements, setRequirements] = useState(task.requirements || '');
+  const [track, setTrack] = useState<Track | string>(task.track || 'main');
+  const [taskType, setTaskType] = useState<string>(task.taskType || '');
   const [category, setCategory] = useState<TaskCategory | string>(task.category || 'Frontend');
   const [difficulty, setDifficulty] = useState<Difficulty>(task.difficulty || 'easy');
   const [rankRequired, setRankRequired] = useState<Rank>(task.rankRequired || 'Ronin');
@@ -113,7 +115,9 @@ function EditForm({ task, id }: { task: Task; id: string }) {
         shortDescription, 
         description, 
         requirements, 
-        category: category as TaskCategory,
+        track: track as Track,
+        taskType: track === 'web3' ? (taskType || 'Smart Contract') : undefined,
+        category: (track === 'web3' ? 'Web3' : category) as TaskCategory,
         difficulty,
         rankRequired,
         points, 
@@ -160,13 +164,23 @@ function EditForm({ task, id }: { task: Task; id: string }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+            <Label>Track</Label>
+            <Select 
+              value={track} 
+              onValueChange={(val) => {
+                setTrack(val);
+                if (val === 'web3') {
+                  setCategory('Web3');
+                  if (!taskType) setTaskType('Smart Contract');
+                } else {
+                  if (category === 'Web3') setCategory('Frontend');
+                }
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Select Track" /></SelectTrigger>
               <SelectContent>
-                {TASK_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                <SelectItem value="main">Main Track (Martial Journey)</SelectItem>
+                <SelectItem value="web3">Web3 Track (Decentralized Path)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -183,17 +197,44 @@ function EditForm({ task, id }: { task: Task; id: string }) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Rank Required</Label>
-          <Select value={rankRequired} onValueChange={(v) => setRankRequired(v as Rank)}>
-            <SelectTrigger><SelectValue placeholder="Select Rank" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Ronin">Ronin</SelectItem>
-              <SelectItem value="Kenshi">Kenshi</SelectItem>
-              <SelectItem value="Samurai">Samurai</SelectItem>
-              <SelectItem value="Shogun">Shogun</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          {track === 'web3' ? (
+            <div className="space-y-2">
+              <Label>Web3 Task Type</Label>
+              <Select value={taskType || 'Smart Contract'} onValueChange={setTaskType}>
+                <SelectTrigger><SelectValue placeholder="Select Web3 Type" /></SelectTrigger>
+                <SelectContent>
+                  {WEB3_TASK_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                <SelectContent>
+                  {TASK_CATEGORIES.filter(c => c !== 'Web3').map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label>Rank Required</Label>
+            <Select value={rankRequired} onValueChange={(v) => setRankRequired(v as Rank)}>
+              <SelectTrigger><SelectValue placeholder="Select Rank" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Ronin">Ronin</SelectItem>
+                <SelectItem value="Kenshi">Kenshi</SelectItem>
+                <SelectItem value="Samurai">Samurai</SelectItem>
+                <SelectItem value="Shogun">Shogun</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-4">

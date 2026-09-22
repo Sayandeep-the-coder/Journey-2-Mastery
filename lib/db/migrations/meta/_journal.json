@@ -57,6 +57,13 @@
       "when": 1790075258708,
       "tag": "0007_perpetual_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790076000000,
+      "tag": "0008_add_web3_track",
+      "breakpoints": true
     }
   ]
 }
