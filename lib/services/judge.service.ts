@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql, ilike } from "drizzle-orm";
+import { eq, and, gt, asc, desc, count, sql, ilike, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import { users, submissions, reviews } from "../db/schema";
 import { env } from "../config/env";
@@ -113,11 +113,13 @@ export async function getAssignedSubmissions(
   if (searchEmail && searchEmail.trim()) {
     const clean = searchEmail.trim();
     conditions.push(
-      sql`EXISTS (
-        SELECT 1 FROM ${users}
-        WHERE ${users.id} = ${submissions.userId}
-          AND ${users.email} ILIKE ${`%${clean}%`}
-      )`
+      inArray(
+        submissions.userId,
+        db
+          .select({ id: users.id })
+          .from(users)
+          .where(ilike(users.email, `%${clean}%`))
+      )
     );
   }
   if (cursor) {
@@ -378,12 +380,14 @@ export async function getReviews(judgeId: string, cursor?: string, limit = 20, s
   if (searchEmail && searchEmail.trim()) {
     const clean = searchEmail.trim();
     conditions.push(
-      sql`EXISTS (
-        SELECT 1 FROM ${submissions}
-        INNER JOIN ${users} ON ${users.id} = ${submissions.userId}
-        WHERE ${submissions.id} = ${reviews.submissionId}
-          AND ${users.email} ILIKE ${`%${clean}%`}
-      )`
+      inArray(
+        reviews.submissionId,
+        db
+          .select({ id: submissions.id })
+          .from(submissions)
+          .innerJoin(users, eq(submissions.userId, users.id))
+          .where(ilike(users.email, `%${clean}%`))
+      )
     );
   }
   if (cursor) conditions.push(gt(reviews.id, cursor));

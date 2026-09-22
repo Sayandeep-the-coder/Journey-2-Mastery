@@ -21,13 +21,14 @@ export function useJudgeWorkload() {
 export function useJudgeQueue(status?: string, email?: string) {
   const queryParams = new URLSearchParams();
   if (status) queryParams.set('status', status);
-  if (email) queryParams.set('email', email);
+  if (email && email.trim()) queryParams.set('email', email.trim());
   const params = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   return useQuery<Submission[], Error>({
-    queryKey: ['judge', 'queue', status, email],
+    queryKey: ['judge', 'queue', status, email?.trim()],
     queryFn: () => apiFetch<Submission[]>(`/judge/submissions${params}`),
     staleTime: 30 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -66,13 +67,14 @@ export function useSubmitReview() {
 
 export function useJudgeReviews(email?: string) {
   const queryParams = new URLSearchParams();
-  if (email) queryParams.set('email', email);
+  if (email && email.trim()) queryParams.set('email', email.trim());
   const params = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   return useQuery<Review[], Error>({
-    queryKey: ['judge', 'reviews', email],
+    queryKey: ['judge', 'reviews', email?.trim()],
     queryFn: () => apiFetch<Review[]>(`/judge/reviews${params}`),
     staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 
