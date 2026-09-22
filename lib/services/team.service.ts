@@ -121,23 +121,60 @@ export async function getTeamPublic(teamId: string) {
 
   if (!team) throw notFound("Team", teamId);
 
+  const higherTeams = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(teams)
+    .where(sql`${teams.score} > ${team.score}`);
+  const teamRank = (Number(higherTeams[0]?.count) || 0) + 1;
+
   const members = await db.query.users.findMany({
     where: eq(users.currentTeamId, teamId),
     columns: {
       id: true,
       username: true,
       fullName: true,
+      avatarUrl: true,
+      role: true,
+      rank: true,
       teamRole: true,
+      score: true,
+      bio: true,
+      collegeName: true,
+      branch: true,
+      discord: true,
     },
+    orderBy: (users, { desc }) => [desc(users.score)],
   });
 
   const leader = members.find((m) => m.teamRole === "leader");
+  const memberCount = members.length;
+  const teamType = memberCount >= 3 ? "trio" : memberCount === 2 ? "duo" : "solo";
 
   return {
     id: team.id,
     name: team.name,
+    score: team.score,
+    rank: teamRank,
+    status: team.status,
     leader: leader ? (leader.fullName || leader.username) : null,
-    memberCount: members.length,
+    memberCount,
+    teamType,
+    members: members.map((m) => ({
+      id: m.id,
+      userId: m.id,
+      username: m.username,
+      fullName: m.fullName,
+      userName: m.fullName || m.username,
+      avatarUrl: m.avatarUrl || undefined,
+      role: m.role,
+      rank: m.rank,
+      teamRole: m.teamRole,
+      score: m.score,
+      bio: m.bio,
+      collegeName: m.collegeName,
+      branch: m.branch,
+      discord: m.discord,
+    })),
   };
 }
 
@@ -265,8 +302,8 @@ export async function joinTeamByCode(userId: string, code: string) {
     columns: { id: true },
   });
 
-  if (members.length >= 3) {
-    throw new AppError("TEAM_FULL", "This team already has the maximum of 3 members.", 400);
+  if (members.length >= 2) {
+    throw new AppError("TEAM_FULL", "This team already has the maximum of 2 members (Duo mode).", 400);
   }
 
   const nextSize = members.length + 1;

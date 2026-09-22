@@ -23,7 +23,7 @@ export default function AdminSubmissionDetailPage() {
   const { data: submission, isLoading, isError, error, refetch } = useAdminSubmission(id);
   const assignJudge = useAssignJudge();
   const overrideReview = useOverrideReview();
-  const [overrideScore, setOverrideScore] = useState('');
+  const [overrideScores, setOverrideScores] = useState<Record<string, number>>({});
   const [overrideReason, setOverrideReason] = useState('');
 
   if (isLoading) return <LoadingSkeleton variant="detail" />;
@@ -90,18 +90,50 @@ export default function AdminSubmissionDetailPage() {
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-japan-red" />Admin Override</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>New Score</Label><Input type="number" value={overrideScore} onChange={(e) => setOverrideScore(e.target.value)} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {submission.review.scores.map(s => (
+                <div key={s.criterionId} className="space-y-2">
+                  <Label>{s.criterionName} (Max: {s.maxScore})</Label>
+                  <Input 
+                    type="number" 
+                    min={0}
+                    max={s.maxScore}
+                    value={overrideScores[s.criterionId] !== undefined ? overrideScores[s.criterionId] : s.score} 
+                    onChange={(e) => setOverrideScores(prev => ({ ...prev, [s.criterionId]: Number(e.target.value) }))} 
+                  />
+                </div>
+              ))}
             </div>
-            <div className="space-y-2"><Label>Reason</Label><Textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Reason for override..." /></div>
+            <div className="space-y-2">
+              <Label>Reason</Label>
+              <Textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Reason for override..." />
+            </div>
             <Button
               variant="outline"
-              onClick={() => overrideReview.mutate({ reviewId: submission.review!.id, score: Number(overrideScore), reason: overrideReason }, {
-                onSuccess: () => { toast.success('Score overridden'); refetch(); setOverrideScore(''); setOverrideReason(''); }
-              })}
-              disabled={!overrideScore || !overrideReason || overrideReview.isPending}
+              onClick={() => {
+                const newScores = submission.review!.scores.map(s => ({
+                  criterionId: s.criterionId,
+                  score: overrideScores[s.criterionId] !== undefined ? overrideScores[s.criterionId] : s.score
+                }));
+                const totalNewScore = newScores.reduce((sum, s) => sum + s.score, 0);
+
+                overrideReview.mutate({ 
+                  reviewId: submission.review!.id, 
+                  totalScore: totalNewScore,
+                  scores: newScores, 
+                  feedback: overrideReason 
+                }, {
+                  onSuccess: () => { 
+                    toast.success('Scores overridden'); 
+                    refetch(); 
+                    setOverrideScores({}); 
+                    setOverrideReason(''); 
+                  }
+                });
+              }}
+              disabled={!overrideReason || overrideReview.isPending}
             >
-              {overrideReview.isPending ? 'Overriding...' : 'Override Score'}
+              {overrideReview.isPending ? 'Overriding...' : 'Override Scores'}
             </Button>
           </CardContent>
         </Card>

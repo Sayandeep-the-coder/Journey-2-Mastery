@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TASK_CATEGORIES } from "../db/schema";
 
 /**
  * POST /api/v1/admin/tasks
@@ -8,7 +9,7 @@ export const createTaskSchema = z.object({
   shortDescription: z.string().min(5).max(500),
   description: z.string().min(10),
   requirements: z.string().optional(),
-  category: z.string().min(1).max(100),
+  category: z.enum(TASK_CATEGORIES),
   difficulty: z.enum(["easy", "medium", "hard"]),
   rankRequired: z.enum(["Ronin", "Kenshi", "Samurai", "Shogun"]).default("Ronin"),
   points: z.number().int().min(0).max(1000),
@@ -26,7 +27,7 @@ export const updateTaskSchema = z.object({
   shortDescription: z.string().min(5).max(500).optional(),
   description: z.string().min(10).optional(),
   requirements: z.string().optional(),
-  category: z.string().min(1).max(100).optional(),
+  category: z.enum(TASK_CATEGORIES).optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   rankRequired: z.enum(["Ronin", "Kenshi", "Samurai", "Shogun"]).optional(),
   points: z.number().int().min(0).max(1000).optional(),
@@ -71,6 +72,10 @@ export type ManualAssignInput = z.infer<typeof manualAssignSchema>;
  */
 export const overrideReviewSchema = z.object({
   totalScore: z.number().int().min(0).max(100).optional(),
+  scores: z.array(z.object({
+    criterionId: z.string(),
+    score: z.number().int().min(0)
+  })).optional(),
   feedback: z.string().max(5000).optional(),
   decision: z.enum(["approved", "rejected"]).optional(),
 });

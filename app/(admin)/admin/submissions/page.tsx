@@ -1,22 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { useAdminSubmissions, useAssignJudge } from '@/hooks/queries/useAdminDashboard';
+import { useAdminSubmissions, useAssignJudge, useAdminJudges } from '@/hooks/queries/useAdminDashboard';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, UserPlus } from 'lucide-react';
+import { UserPlus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function AdminSubmissionsPage() {
   const [status, setStatus] = useState('');
-  const { data: submissions, isLoading, isError, error, refetch } = useAdminSubmissions({ status: status || undefined });
+  const [judgeId, setJudgeId] = useState('');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
+  
+  const { data: submissions, isLoading, isError, error, refetch } = useAdminSubmissions({ 
+    status: status || undefined,
+    judgeId: judgeId || undefined,
+    search: debouncedSearch || undefined
+  });
+  const { data: judges } = useAdminJudges();
   const assignJudge = useAssignJudge();
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
@@ -31,16 +41,34 @@ export default function AdminSubmissionsPage() {
         </Link>
       </div>
 
-      <Select value={status} onValueChange={(v) => setStatus(v === 'all' ? '' : v)}>
-        <SelectTrigger className="w-40"><SelectValue placeholder="All Status" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="in_review">In Review</SelectItem>
-          <SelectItem value="approved">Approved</SelectItem>
-          <SelectItem value="rejected">Rejected</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex flex-wrap gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-text" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by email or username..." className="pl-9" />
+        </div>
+        <Select value={status} onValueChange={(v) => setStatus(v === 'all' ? '' : v)}>
+          <SelectTrigger className="w-40"><SelectValue placeholder="All Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="in_review">In Review</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={judgeId} onValueChange={(v) => setJudgeId(v === 'all' ? '' : v)}>
+          <SelectTrigger className="w-56"><SelectValue placeholder="All Judges" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Judges</SelectItem>
+            {judges?.map((judge) => (
+              <SelectItem key={judge.id} value={judge.id}>
+                {judge.username || 'Unknown Judge'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {!submissions || submissions.length === 0 ? (
         <EmptyState icon="inbox" title="No submissions" message="No submissions match the selected filter." />

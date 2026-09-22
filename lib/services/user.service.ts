@@ -1,11 +1,11 @@
 import { eq, and, gt, sql, ilike, or, desc, asc, count, isNull, inArray } from "drizzle-orm";
 import { db } from "../db/client";
-import { users, tasks, submissions, reviews, sessions, teams, communityPosts } from "../db/schema";
+import { users, tasks, submissions, reviews, sessions, teams, communityPosts, TASK_CATEGORIES } from "../db/schema";
 import { notFound, forbidden, conflict, AppError } from "../utils/apiError";
 import { isRankSufficient, STATUS_PENDING, RANK_ORDER, NOTIFICATION_TYPES } from "../utils/constants";
 import { logger } from "../logger";
 import type { CreateSubmissionInput, UpdateSubmissionInput, UpdateProfileInput, TaskFilterInput } from "../validators/user.validator";
-import type { Rank } from "../db/schema";
+import type { Rank, TaskCategory } from "../db/schema";
 import { enrichReviewWithScores } from "./judge.service";
 import { assignJudge } from "./assignment.service";
 import { createNotification } from "./notification.service";
@@ -14,36 +14,151 @@ import { createNotification } from "./notification.service";
 // Dashboard
 // ──────────────────────────────────────────────
 
+interface LeaderboardRankRow {
+  leaderboard_rank?: number | string;
+  total_score?: number | string;
+}
+
+interface ServiceClanMember {
+  id: string;
+  username: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  teamRole: string | null;
+  score: number | null;
+  rank: Rank | null;
+  discord?: string | null;
+  githubUrl?: string;
+}
+
+interface ServiceTeamInfo {
+  id: string;
+  name: string;
+  score: number;
+  rank: number;
+  role?: 'leader' | 'member';
+  status?: string;
+  teamRole?: string;
+  memberCount: number;
+  teamType: 'solo' | 'duo' | 'trio';
+  members?: ServiceClanMember[];
+}
+
 /**
  * Get user dashboard summary.
  */
 export async function getDashboard(userId: string) {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { rank: true, githubAccessToken: false },
+    columns: { id: true, rank: true, currentTeamId: true, teamRole: true, score: true },
   });
 
   if (!user) throw notFound("User", userId);
 
-  // Count completed tasks (approved submissions)
-  const [completedResult] = await db
-    .select({ count: count() })
-    .from(submissions)
-    .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved")));
+  let teamInfo: ServiceTeamInfo | null = null;
 
-  // Count total available tasks for user's rank
-  const availableRanks = getAvailableRanks(user.rank);
-  const [totalTasksResult] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(and(eq(tasks.isActive, true), inArray(tasks.rankRequired, availableRanks)));
+  let totalScore = Number(user.score ?? 0);
+  let effectiveRank = user.rank;
+  let leaderboardRank = 0;
+  const completedTaskIds = new Set<string>();
 
-  // Total score from approved reviews
-  const [scoreResult] = await db
-    .select({ totalScore: sql<number>`COALESCE(SUM(${reviews.totalScore}), 0)` })
-    .from(reviews)
-    .innerJoin(submissions, eq(reviews.submissionId, submissions.id))
-    .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved")));
+  if (user.currentTeamId) {
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.id, user.currentTeamId),
+    });
+
+    if (team) {
+      const clanMembers = await db.query.users.findMany({
+        where: eq(users.currentTeamId, team.id),
+        columns: {
+          id: true,
+          username: true,
+          fullName: true,
+          avatarUrl: true,
+          teamRole: true,
+          score: true,
+          rank: true,
+        },
+      });
+
+      const memberCount = clanMembers.length;
+      const teamType: 'solo' | 'duo' | 'trio' = memberCount >= 3 ? 'trio' : memberCount === 2 ? 'duo' : 'solo';
+
+      // Query live clan rank from leaderboard view
+      const rankRow = await db.execute(
+        sql`SELECT leaderboard_rank, total_score FROM leaderboard WHERE user_id = ${team.id} LIMIT 1`
+      );
+      const teamRank = Number((rankRow[0] as LeaderboardRankRow | undefined)?.leaderboard_rank ?? 0);
+
+      totalScore = Number(team.score ?? 0);
+      leaderboardRank = teamRank;
+
+      if (totalScore >= 300) effectiveRank = 'Shogun';
+      else if (totalScore >= 200) effectiveRank = 'Samurai';
+      else if (totalScore >= 100) effectiveRank = 'Kenshi';
+      else effectiveRank = 'Ronin';
+
+      const membersWithGithub = clanMembers.map((m) => ({
+        ...m,
+        githubUrl: m.username ? `https://github.com/${m.username}` : undefined,
+      }));
+
+      teamInfo = {
+        id: team.id,
+        name: team.name,
+        score: totalScore,
+        rank: teamRank,
+        role: (user.teamRole as 'leader' | 'member') || 'member',
+        memberCount,
+        teamType,
+        members: membersWithGithub,
+      };
+
+      // Approved submissions for this clan
+      const clanCompletedSubmissions = await db
+        .select({ taskId: submissions.taskId })
+        .from(submissions)
+        .where(and(eq(submissions.teamId, team.id), eq(submissions.status, "approved")));
+
+      clanCompletedSubmissions.forEach((s) => completedTaskIds.add(s.taskId));
+    }
+  } else {
+    // Solo warrior
+    const rankRow = await db.execute(
+      sql`SELECT leaderboard_rank, total_score FROM leaderboard WHERE user_id = ${user.id} LIMIT 1`
+    );
+    leaderboardRank = Number((rankRow[0] as LeaderboardRankRow | undefined)?.leaderboard_rank ?? 0);
+
+    const soloCompletedSubmissions = await db
+      .select({ taskId: submissions.taskId })
+      .from(submissions)
+      .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved"), isNull(submissions.teamId)));
+
+    soloCompletedSubmissions.forEach((s) => completedTaskIds.add(s.taskId));
+
+    const [scoreResult] = await db
+      .select({ totalScore: sql<number>`COALESCE(SUM(${reviews.totalScore}), 0)` })
+      .from(reviews)
+      .innerJoin(submissions, eq(reviews.submissionId, submissions.id))
+      .where(and(eq(submissions.userId, userId), eq(submissions.status, "approved"), isNull(submissions.teamId)));
+
+    if (scoreResult?.totalScore != null) {
+      totalScore = Number(scoreResult.totalScore);
+    }
+  }
+
+  // Visible and active tasks for user's rank
+  const availableRanks = getAvailableRanks(effectiveRank);
+  const activeTasks = await db.query.tasks.findMany({
+    where: and(
+      eq(tasks.isActive, true),
+      inArray(tasks.rankRequired, availableRanks)
+    ),
+    orderBy: [asc(tasks.createdAt), asc(tasks.id)],
+  });
+
+  const uncompletedActiveTasks = activeTasks.filter((t) => !completedTaskIds.has(t.id));
+  const currentTask = uncompletedActiveTasks[0] || null;
 
   const ranksConfig = [
     { name: 'Ronin', pts: 0, desc: 'Ronin is the first level of Journey to Mastery. You have no backend, no database, no auth. Just you, a browser, and a blank canvas.', diff: 'Easy' },
@@ -53,11 +168,14 @@ export async function getDashboard(userId: string) {
   ];
 
   return {
-    rank: user.rank,
-    totalScore: Number(scoreResult?.totalScore ?? 0),
-    tasksCompleted: completedResult?.count ?? 0,
-    tasksAvailable: (totalTasksResult?.count ?? 0) - (completedResult?.count ?? 0),
+    rank: effectiveRank,
+    totalScore,
+    tasksCompleted: completedTaskIds.size,
+    tasksAvailable: uncompletedActiveTasks.length,
+    currentTask,
     ranksConfig,
+    team: teamInfo,
+    leaderboardRank,
   };
 }
 
@@ -76,12 +194,15 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 
   if (!user) throw notFound("User", userId);
 
+  const availableRanks = getAvailableRanks(user.rank);
+
   const conditions = [
     eq(tasks.isActive, true),
+    inArray(tasks.rankRequired, availableRanks),
   ];
 
   if (filters.category) {
-    conditions.push(eq(tasks.category, filters.category));
+    conditions.push(eq(tasks.category, filters.category as TaskCategory));
   }
   if (filters.difficulty) {
     conditions.push(eq(tasks.difficulty, filters.difficulty));
@@ -128,7 +249,12 @@ export async function getTaskCategories() {
     .groupBy(tasks.category)
     .orderBy(asc(tasks.category));
 
-  return result.map(c => ({ id: c.name, name: c.name }));
+  const categorySet = new Set<string>(TASK_CATEGORIES);
+  for (const c of result) {
+    if (c.name) categorySet.add(c.name);
+  }
+
+  return Array.from(categorySet).map((name) => ({ id: name, name }));
 }
 
 /**
@@ -136,7 +262,7 @@ export async function getTaskCategories() {
  */
 export async function getTaskById(taskId: string) {
   const task = await db.query.tasks.findFirst({
-    where: eq(tasks.id, taskId),
+    where: and(eq(tasks.id, taskId), eq(tasks.isActive, true)),
   });
 
   if (!task) throw notFound("Task", taskId);
@@ -482,14 +608,81 @@ export async function getProfile(userId: string) {
 
   if (!user) throw notFound("User", userId);
 
+  let teamInfo: ServiceTeamInfo | null = null;
+  let effectiveScore = Number(user.score ?? 0);
+  let effectiveRank = user.rank;
+
+  if (user.currentTeamId) {
+    const teamRecord = await db.query.teams.findFirst({
+      where: eq(teams.id, user.currentTeamId),
+    });
+
+    if (teamRecord) {
+      const clanMembers = await db.query.users.findMany({
+        where: eq(users.currentTeamId, teamRecord.id),
+        columns: {
+          id: true,
+          username: true,
+          fullName: true,
+          avatarUrl: true,
+          teamRole: true,
+          score: true,
+          rank: true,
+          discord: true,
+        },
+        orderBy: (users, { desc }) => [desc(users.score)],
+      });
+
+      const rankRow = await db.execute(
+        sql`SELECT leaderboard_rank, total_score FROM leaderboard WHERE user_id = ${teamRecord.id} LIMIT 1`
+      );
+      const teamRank = Number((rankRow[0] as LeaderboardRankRow | undefined)?.leaderboard_rank ?? 0);
+      const memberCount = clanMembers.length;
+      const teamType = memberCount >= 3 ? 'trio' : memberCount === 2 ? 'duo' : 'solo';
+
+      effectiveScore = Number(teamRecord.score ?? 0);
+      if (effectiveScore >= 300) effectiveRank = 'Shogun';
+      else if (effectiveScore >= 200) effectiveRank = 'Samurai';
+      else if (effectiveScore >= 100) effectiveRank = 'Kenshi';
+      else effectiveRank = 'Ronin';
+
+      const membersWithGithub = clanMembers.map((m) => ({
+        ...m,
+        githubUrl: m.username ? `https://github.com/${m.username}` : undefined,
+      }));
+
+      teamInfo = {
+        id: teamRecord.id,
+        name: teamRecord.name,
+        score: effectiveScore,
+        rank: teamRank,
+        status: teamRecord.status,
+        teamRole: user.teamRole || 'member',
+        memberCount,
+        teamType,
+        members: membersWithGithub,
+      };
+    }
+  }
+
   // Count submissions
+  const submissionConditions = [];
+  if (user.currentTeamId) {
+    submissionConditions.push(eq(submissions.teamId, user.currentTeamId));
+  } else {
+    submissionConditions.push(eq(submissions.userId, userId), isNull(submissions.teamId));
+  }
+
   const [submissionsCountResult] = await db
     .select({ count: count() })
     .from(submissions)
-    .where(eq(submissions.userId, userId));
+    .where(and(...submissionConditions));
 
   return {
     ...user,
+    score: effectiveScore,
+    rank: effectiveRank,
+    team: teamInfo,
     submissionCount: submissionsCountResult?.count ?? 0,
   };
 }

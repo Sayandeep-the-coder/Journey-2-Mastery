@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowUpRight, Heart, Globe } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -32,61 +34,166 @@ export default function Footer() {
     };
   }, []);
 
+  const footerLinks = {
+    program: [
+      { label: "Home", href: "#home" },
+      { label: "4 Levels of Mastery", href: "#levels" },
+      { label: "Quest Timeline", href: "#timeline" },
+      { label: "Honored Mentors", href: "#mentors" },
+      { label: "Honor & Prizes", href: "#prizes" },
+      { label: "Warrior FAQ", href: "#faq" },
+    ],
+    community: [
+      { label: "Instagram", href: "https://www.instagram.com/dc_kgec/", external: true },
+      { label: "LinkedIn", href: "https://www.linkedin.com/company/dc-kgec/", external: true },
+      { label: "Website", href: "https://dc.kgec.tech/", external: true },
+    ],
+    resources: [
+      { label: "Level 1: Foundation Docs", href: "#", external: true },
+      { label: "Level 2: Development Docs", href: "#", external: true },
+      { label: "Level 3: Execution Docs", href: "#", external: true },
+      { label: "Level 4: Mastery Docs", href: "#", external: true },
+      { label: "Connect with Mentors", href: "#mentors" }      
+    ],
+  };
+
   return (
-    <footer className="bg-[var(--color-off-white)] pt-24 pb-12 border-t border-[var(--color-borders)] relative z-20">
-      <div className="max-w-[1440px] w-full mx-auto px-6 md:px-12 lg:px-24 flex flex-col md:flex-row justify-between items-center md:items-start gap-12">
+    <footer className="bg-(--color-off-white) pt-24 pb-12 border-t border-(--color-borders) relative z-20">
+      <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24">
         
-        {/* Left: Brand */}
-        <div className="flex flex-col items-center md:items-start">
-          <a href="https://dc.kgec.tech/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 mb-6 group">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-sm border border-[var(--color-borders)] group-hover:border-[var(--color-japan-red)] transition-colors">
-              <img src="/logo.jpg" alt="Dev Community Logo" className="w-full h-full object-cover" />
+        {/* Main Footer Content */}
+        <div className="flex flex-col xl:grid xl:grid-cols-12 gap-12 xl:gap-8 pb-16 border-b border-(--color-borders)">
+          
+          {/* Col 1: Brand */}
+          <div className="xl:col-span-4 flex flex-col items-center xl:items-start">
+            <a href="https://dc.kgec.tech/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 mb-6 group">
+              <div className="w-16 h-16 flex items-center justify-center transition-transform group-hover:scale-105 shrink-0">
+                <img src="/j2m-logo.png" alt="J2M Logo" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex flex-col ml-1">
+                <span className="text-[10px] leading-none tracking-[0.2em] text-(--color-secondary-text) mb-1 uppercase group-hover:text-(--color-japan-red) transition-colors">Journey To</span>
+                <span className="font-onari text-2xl leading-none tracking-widest text-(--color-japan-red) font-normal uppercase">Mastery</span>
+              </div>
+            </a>
+            <p className="text-(--color-secondary-text) text-sm max-w-xs text-center xl:text-left mb-6">
+              Empowering developers to build, launch, and impact the world.
+            </p>
+          </div>
+
+          {/* Links Grid Wrapper for Mobile */}
+          <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-12 w-full">
+            {/* Col 2: Program */}
+            <div className="col-span-1">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Program</span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.program.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors inline-flex items-center gap-1 group"
+                  >
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
             </div>
-            <div className="flex flex-col ml-1">
-              <span className="text-[10px] leading-none tracking-[0.2em] text-[var(--color-secondary-text)] mb-1 uppercase group-hover:text-[var(--color-japan-red)] transition-colors">Dev</span>
-              <span className="font-onari text-2xl leading-none tracking-widest text-[var(--color-japan-red)] font-normal uppercase">Community</span>
+
+            {/* Col 3: Community */}
+            <div className="col-span-1">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Community</span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.community.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors inline-flex items-center gap-1 group"
+                  >
+                    <span>{item.label}</span>
+                    {item.external && (
+                      <ArrowUpRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
             </div>
-          </a>
-          <p className="text-[var(--color-secondary-text)] text-sm max-w-xs text-center md:text-left">
-            Empowering developers to build, launch, and impact the world.
+
+            {/* Col 4: Resources */}
+            <div className="col-span-2 sm:col-span-1">
+              <h4 className="font-heading text-sm text-(--color-primary-text) tracking-widest uppercase mb-5 flex items-center gap-2">
+                <span>Resources</span>
+                <span className="w-1 h-1 rounded-full bg-(--color-japan-red)"></span>
+              </h4>
+              <ul className="flex flex-col gap-3">
+              {footerLinks.resources.map(item => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    className="text-xs text-(--color-secondary-text) hover:text-(--color-japan-red) transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar: Copyright & Socials */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-(--color-secondary-text)">
+          <p className="flex items-center gap-1 text-center sm:text-left">
+            <span>&copy; {new Date().getFullYear()} Journey to Mastery. Built with</span>
+            <Heart className="w-3.5 h-3.5 text-(--color-japan-red) fill-current inline" />
+            <span>by Dev Community.</span>
           </p>
-        </div>
 
-        {/* Center: Seal Stamp */}
-        <div 
-          ref={sealRef}
-          className="flex flex-col items-center justify-center opacity-0"
-        >
-          <div className="border-2 border-[var(--color-dark-red)] p-2 w-16 h-16 flex items-center justify-center text-[var(--color-dark-red)] rounded-sm">
-            <span className="font-heading text-lg text-center leading-tight">魂<br/>決</span>
+          {/* Social Icons */}
+          <div className="flex items-center gap-4">
+            <a
+              href="https://www.instagram.com/dc_kgec/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
+              aria-label="Instagram"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M7.75 2h8.5A5.757 5.757 0 0 1 22 7.75v8.5A5.757 5.757 0 0 1 16.25 22h-8.5A5.757 5.757 0 0 1 2 16.25v-8.5A5.757 5.757 0 0 1 7.75 2zm0 1.5A4.255 4.255 0 0 0 3.5 7.75v8.5A4.255 4.255 0 0 0 7.75 20.5h8.5a4.255 4.255 0 0 0 4.25-4.25v-8.5A4.255 4.255 0 0 0 16.25 3.5h-8.5zM12 7.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 1.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm5.25-2.25a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+              </svg>
+            </a>
+
+            <a
+              href="https://www.linkedin.com/company/dc-kgec/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
+              aria-label="LinkedIn"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.54a1.45 1.45 0 0 0-1.45 1.45 1.45 1.45 0 0 0 1.45 1.45 1.45 1.45 0 0 0 1.45-1.45 1.45 1.45 0 0 0-1.45-1.45Z" />
+              </svg>
+            </a>
+
+            <a
+              href="https://dc.kgec.tech/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 rounded-full bg-(--color-card-bg) border border-(--color-borders) flex items-center justify-center text-(--color-secondary-text) hover:text-(--color-japan-red) hover:border-(--color-japan-red) transition-colors shadow-2xs"
+              aria-label="Website"
+            >
+              <Globe className="w-4 h-4" />
+            </a>
           </div>
         </div>
-
-        {/* Right: Links & Social */}
-        <div className="flex flex-col items-center md:items-end gap-6">
-          <div className="flex gap-6">
-            {["Overview", "FAQ", "Contact"].map(link => (
-              <a key={link} href={`#${link.toLowerCase()}`} className="text-sm font-medium tracking-wide text-[var(--color-primary-text)] hover:text-[var(--color-japan-red)] transition-colors">
-                {link}
-              </a>
-            ))}
-          </div>
-          <div className="flex gap-4 text-[var(--color-secondary-text)]">
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-            </a>
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-            </a>
-            <a href="#" className="hover:text-[var(--color-japan-red)] transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-            </a>
-          </div>
-          <p className="text-xs text-[var(--color-muted-text)] mt-4">
-            &copy; {new Date().getFullYear()} Journey to Mastery. All rights reserved.
-          </p>
-        </div>
-
       </div>
     </footer>
   );

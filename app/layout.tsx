@@ -29,8 +29,31 @@ const marker = Permanent_Marker({
 });
 
 export const metadata: Metadata = {
-  title: "Journey to Mastery",
-  description: "A 4-week coding program for developers to turn one idea into a live product.",
+  title: "Journey to Mastery | DC KGEC",
+  description: "An intensive 4-week gamified coding quest by Developers Community KGEC. Build a live product, get expert reviews, and rank up from Ronin to Shogun.",
+  keywords: ["hackathon", "coding quest", "Developers Community", "DC KGEC", "web development", "mentorship"],
+  openGraph: {
+    title: "Journey to Mastery | DC KGEC",
+    description: "An intensive 4-week gamified coding quest by Developers Community KGEC. Build a live product, get expert reviews, and rank up from Ronin to Shogun.",
+    url: "https://dc.kgec.tech",
+    siteName: "Journey to Mastery",
+    images: [
+      {
+        url: "/j2m-logo.png",
+        width: 800,
+        height: 800,
+        alt: "Journey to Mastery Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Journey to Mastery | DC KGEC",
+    description: "An intensive 4-week gamified coding quest by Developers Community KGEC.",
+    images: ["/j2m-logo.png"],
+  },
 };
 
 import QueryProvider from "@/components/providers/QueryProvider";

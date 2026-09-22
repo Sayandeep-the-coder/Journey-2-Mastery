@@ -20,8 +20,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md text-center">
           {/* Logo */}
           <div className="inline-flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-md bg-japan-red flex items-center justify-center">
-              <span className="text-white font-serif font-bold text-lg">J</span>
+            <div className="w-12 h-12 relative flex-shrink-0">
+              <img src="/j2m-logo.png" alt="J2M Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-serif text-xl font-semibold text-primary-text tracking-tight">
               Journey to Mastery

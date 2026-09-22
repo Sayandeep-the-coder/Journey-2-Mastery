@@ -8,12 +8,13 @@ import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, ListChecks, Clock, Star, ArrowRight, Activity } from 'lucide-react';
+import { Trophy, ListChecks, Clock, Star, ArrowRight, Activity, Shield, Users, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import type { RankConfig } from '@/types/api.types';
 
 function NinjaStarIcon({ className }: { className?: string }) {
   return (
@@ -43,8 +44,8 @@ export default function UserDashboard() {
 
   const ranksConfig = data?.ranksConfig || [];
 
-  const currentRankName = user?.rank || 'Ronin';
-  const currentRankIndex = ranksConfig.findIndex((r: any) => r.name === currentRankName);
+  const currentRankName = data.team ? data.rank : (user?.rank || data.rank || 'Ronin');
+  const currentRankIndex = ranksConfig.findIndex((r: RankConfig) => r.name === currentRankName);
   const currentRankData = ranksConfig[currentRankIndex !== -1 ? currentRankIndex : 0] || { name: 'Ronin', pts: 0, desc: '', diff: 'Easy' };
   const nextRank = currentRankIndex < ranksConfig.length - 1 ? ranksConfig[currentRankIndex + 1] : null;
   const rankProgressPercent = currentRankIndex === -1 ? 0 : (currentRankIndex / Math.max(ranksConfig.length - 1, 1)) * 100;
@@ -81,15 +82,98 @@ export default function UserDashboard() {
             <p className="text-secondary-text mt-3 font-medium text-base md:text-lg">Here&apos;s your journey overview &amp; warrior metrics.</p>
           </div>
           
-          <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xs border border-borders/80 flex items-center gap-3">
-             <NinjaStarIcon className="w-5 h-5 text-japan-red" />
-             <div className="flex flex-col">
-               <span className="text-[10px] uppercase tracking-wider text-muted-text font-bold">Current Rank</span>
-               <span className="font-bold text-base text-primary-text">{user?.rank || 'Ronin'}</span>
-             </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {data.team ? (
+              <div className="bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xs border border-borders/80 flex items-center gap-3">
+                <Shield className="w-6 h-6 text-japan-red" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-text font-bold">
+                    Clan · {data.team.teamType.toUpperCase()}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-base text-primary-text truncate max-w-[140px]">{data.team.name}</span>
+                    {data.team.rank > 0 && data.team.score > 0 ? (
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        #{data.team.rank}
+                      </span>
+                    ) : (
+                      <span className="bg-secondary-bg text-muted-text text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Ranked
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xs border border-borders/80 flex items-center gap-3">
+              <NinjaStarIcon className="w-5 h-5 text-japan-red" />
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase tracking-wider text-muted-text font-bold">
+                  {data.team ? 'Martial Title' : 'Current Rank'}
+                </span>
+                <span className="font-bold text-base text-primary-text">{currentRankName}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ── Clan Standings & Intel Banner (Only for Clan Warriors) ── */}
+      {data.team && (
+        <div className="rounded-2xl border border-borders/80 bg-white/90 backdrop-blur-md p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-red-50 to-amber-50 border border-japan-red/30 flex items-center justify-center text-japan-red shrink-0 shadow-2xs">
+              <Shield className="h-6 w-6 fill-japan-red/15" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-serif text-lg font-bold text-primary-text">
+                  {data.team.name}
+                </h3>
+                {data.team.role === 'leader' ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-full">
+                    <Crown className="w-3 h-3 text-amber-600" />
+                    Clan Leader
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold px-2 py-0.5 rounded-full">
+                    <Users className="w-3 h-3 text-indigo-600" />
+                    Clan Warrior
+                  </span>
+                )}
+                {data.team.rank > 0 && data.team.score > 0 ? (
+                  <span className="text-xs font-bold text-amber-700 font-serif">
+                    Realm Rank #{data.team.rank}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-text font-medium">
+                    Live Standings
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-secondary-text mt-0.5">
+                {data.team.role === 'leader'
+                  ? 'As Clan Leader, only you are authorized to submit repositories for challenge evaluations on behalf of your clan.'
+                  : 'Your clan submissions are managed by your team leader. All honor points and task victories earned are credited directly to your clan.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-muted-text block">Clan Honor</span>
+              <span className="font-serif font-black text-lg text-japan-red">{data.team.score} pts</span>
+            </div>
+            <Link
+              href="/leaderboard"
+              className="px-3.5 py-1.5 rounded-xl bg-secondary-bg hover:bg-white border border-borders text-xs font-bold text-primary-text hover:text-japan-red transition-all shadow-2xs"
+            >
+              View Standings →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Main Bento Grid Layout ── */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -121,7 +205,7 @@ export default function UserDashboard() {
               </div>
               
               <div className="relative flex justify-between z-10">
-                {ranksConfig.map((rank: any, i: number) => {
+                {ranksConfig.map((rank: RankConfig, i: number) => {
                   const isActive = i <= currentRankIndex;
                   const Icon = getRankIcon(rank.name);
                   return (
@@ -149,38 +233,84 @@ export default function UserDashboard() {
           </CardContent>
         </Card>
 
-        {/* Bento Tile 2: Continue Journey Card (Span 4) */}
+        {/* Bento Tile 2: Continue Journey OR Congratulations Card (Span 4) */}
         <Card className="md:col-span-4 rounded-3xl border-borders shadow-xs bg-white/80 overflow-hidden relative flex flex-col justify-between hover:shadow-md transition-all duration-300">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-japan-red" />
           <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
-                  {currentRankData.diff || 'Active'}
-                </span>
-                <span className="text-xs font-bold text-secondary-text font-serif">
-                  {nextRank ? `${nextRank.pts} pts goal` : 'Top Rank'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 my-3">
-                <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
-                  <Image src={`/${currentRankName.toLowerCase()}.png`} alt={currentRankName} fill className="object-contain p-2" />
-                </div>
+            {(data.tasksAvailable ?? 0) === 0 ? (
+              /* All Tasks Completed / Victory State */
+              <>
                 <div>
-                  <h3 className="font-serif text-2xl font-bold text-primary-text">{currentRankData.name}</h3>
-                  <p className="text-xs text-muted-text mt-1 line-clamp-2">{currentRankData.desc}</p>
-                </div>
-              </div>
-            </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-200">
+                      🎉 Victory
+                    </span>
+                    <span className="text-xs font-bold text-japan-red font-serif">
+                      All Tasks Completed!
+                    </span>
+                  </div>
 
-            <div className="pt-6 border-t border-borders/50 mt-4">
-              <Link href="/tasks" className="block w-full">
-                <button className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]">
-                  View Available Tasks <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
-            </div>
+                  <div className="flex items-center gap-4 my-3">
+                    <div className="w-20 h-20 rounded-2xl bg-amber-50 border border-amber-200 shadow-xs shrink-0 overflow-hidden relative flex items-center justify-center text-amber-600">
+                      <Trophy className="w-10 h-10 animate-bounce" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">Congratulations!</h3>
+                      <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                        You have completed all available tasks in Journey to Mastery. Check the Hall of Masters for your rank!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-borders/50 mt-4">
+                  <Link 
+                    href="/leaderboard" 
+                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                  >
+                    View Leaderboard <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </>
+            ) : (
+              /* Tasks Available / Active Task Goal State */
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
+                      {(data.currentTask?.difficulty || currentRankData?.diff || 'ACTIVE').toUpperCase()}
+                    </span>
+                    <span className="text-xs font-bold text-secondary-text font-serif">
+                      {data.currentTask ? `${data.currentTask.points} pts goal` : (nextRank ? `${nextRank.pts} pts goal` : 'Active Goal')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 my-3">
+                    <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
+                      <Image 
+                        src={`/${(data.currentTask?.rankRequired || currentRankName || 'ronin').toLowerCase()}.png`} 
+                        alt={data.currentTask?.title || currentRankName || 'Task'} 
+                        fill 
+                        className="object-contain p-2" 
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">{data.currentTask?.title || currentRankData.name}</h3>
+                      <p className="text-xs text-muted-text mt-1 line-clamp-2">{data.currentTask?.shortDescription || data.currentTask?.description || currentRankData.desc}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-borders/50 mt-4">
+                  <Link 
+                    href="/tasks" 
+                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                  >
+                    View Available Tasks ({data.tasksAvailable}) <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -193,9 +323,13 @@ export default function UserDashboard() {
               <NinjaStarIcon className="h-6 w-6 text-japan-red" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Total Honor</p>
+              <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                {data.team ? 'Clan Honor' : 'Total Honor'}
+              </p>
               <p className="text-2xl font-bold text-primary-text font-serif">{data.totalScore || 0}</p>
-              <p className="text-[11px] text-secondary-text mt-0.5">Points accumulated</p>
+              <p className="text-[11px] text-secondary-text mt-0.5">
+                {data.team ? `${data.team.name} points` : 'Points accumulated'}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -207,9 +341,13 @@ export default function UserDashboard() {
               <ListChecks className="h-6 w-6 text-japan-red" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Tasks Completed</p>
+              <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                {data.team ? 'Clan Tasks Solved' : 'Tasks Completed'}
+              </p>
               <p className="text-2xl font-bold text-primary-text font-serif">{data.tasksCompleted || 0}</p>
-              <p className="text-[11px] text-secondary-text mt-0.5">Approved solutions</p>
+              <p className="text-[11px] text-secondary-text mt-0.5">
+                {data.team ? 'Approved for clan' : 'Approved solutions'}
+              </p>
             </div>
           </CardContent>
         </Card>

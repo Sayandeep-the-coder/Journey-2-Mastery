@@ -14,18 +14,20 @@ import type { GitHubRepo } from "@/types";
  * Uses the stored encrypted GitHub access token.
  * Results are cached in Redis for 2-5 min to stay under GitHub's rate limit.
  */
-export async function getUserRepos(userId: string): Promise<GitHubRepo[]> {
-  // Check cache first
+export async function getUserRepos(userId: string, refresh = false): Promise<GitHubRepo[]> {
+  // Check cache first (unless refresh requested)
   const cacheKey = CACHE_KEYS.userRepos(userId);
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached) as GitHubRepo[];
+  if (!refresh) {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as GitHubRepo[];
+    }
   }
 
-  // Fetch user to get encrypted token
+  // Fetch user to get encrypted token and username
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { githubAccessToken: true },
+    columns: { githubAccessToken: true, username: true },
   });
 
   if (!user?.githubAccessToken) {
@@ -47,8 +49,10 @@ export async function getUserRepos(userId: string): Promise<GitHubRepo[]> {
     );
 
     try {
+      // visibility=public: only public repos
+      // affiliation=owner: only repos owned by the user (including repos forked by the user, excluding org/collab repos)
       const response = await fetch(
-        `${githubConfig.apiUrl}/user/repos?visibility=public&sort=updated&per_page=${perPage}&page=${page}`,
+        `${githubConfig.apiUrl}/user/repos?visibility=public&affiliation=owner&sort=updated&per_page=${perPage}&page=${page}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -92,10 +96,22 @@ export async function getUserRepos(userId: string): Promise<GitHubRepo[]> {
         description: string | null;
         updated_at: string;
         private: boolean;
+        fork: boolean;
+        language: string | null;
+        stargazers_count: number;
+        owner?: {
+          login: string;
+          id: number;
+        };
       }>;
 
       for (const repo of data) {
-        if (!repo.private) {
+        // Double check: public and owned by this user
+        const isOwner = user.username && repo.owner?.login
+          ? repo.owner.login.toLowerCase() === user.username.toLowerCase()
+          : true;
+
+        if (!repo.private && isOwner) {
           repos.push({
             repoId: String(repo.id),
             name: repo.name,
@@ -103,6 +119,9 @@ export async function getUserRepos(userId: string): Promise<GitHubRepo[]> {
             htmlUrl: repo.html_url,
             description: repo.description,
             updatedAt: repo.updated_at,
+            fork: repo.fork,
+            language: repo.language || undefined,
+            stargazersCount: repo.stargazers_count,
           });
         }
       }

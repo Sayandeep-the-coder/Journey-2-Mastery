@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTasks, useTaskCategories, useCompletedTasks, usePendingTasks } from '@/hooks/queries/useTasks';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
@@ -50,13 +51,14 @@ const landscapes = ['/images/landscape-torii.png', '/images/landscape-temple.png
 
 export default function TasksPage() {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [category, setCategory] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('');
   const [tab, setTab] = useState('all');
 
   const { data: categories } = useTaskCategories();
   const { data: availableTasks, isLoading: isAvailLoading, isError, error, refetch } = useTasks({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     category: category || undefined,
     difficulty: difficulty || undefined,
   });

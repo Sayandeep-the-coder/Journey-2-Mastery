@@ -10,11 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { Task } from '@/types/api.types';
+import type { Task, Difficulty, Rank, TaskCategory } from '@/types/api.types';
+import { TASK_CATEGORIES } from '@/types/api.types';
 
 function EditForm({ task, id }: { task: Task; id: string }) {
   const updateTask = useUpdateTask();
@@ -22,18 +24,48 @@ function EditForm({ task, id }: { task: Task; id: string }) {
   const [shortDescription, setShortDescription] = useState(task.shortDescription || '');
   const [description, setDescription] = useState(task.description);
   const [requirements, setRequirements] = useState(task.requirements || '');
+  const [category, setCategory] = useState<TaskCategory | string>(task.category || 'Frontend');
+  const [difficulty, setDifficulty] = useState<Difficulty>(task.difficulty || 'easy');
+  const [rankRequired, setRankRequired] = useState<Rank>(task.rankRequired || 'Ronin');
   const [points, setPoints] = useState(task.points);
   const [bonusPoints, setBonusPoints] = useState(task.bonusPoints || 0);
   const [deadline, setDeadline] = useState(task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '');
   const [isActive, setIsActive] = useState(task.isActive ?? true);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'description' | 'requirements') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        if (fieldName === 'description') setDescription(text);
+        else setRequirements(text);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleSave = () => {
     updateTask.mutate(
       { 
-        id, title, shortDescription, description, requirements, 
-        points, bonusPoints, deadline: deadline ? new Date(deadline).toISOString() : undefined, isActive 
+        id, 
+        title, 
+        shortDescription, 
+        description, 
+        requirements, 
+        category: category as TaskCategory,
+        difficulty,
+        rankRequired,
+        points, 
+        bonusPoints, 
+        deadline: deadline ? new Date(deadline).toISOString() : null, 
+        isActive 
       },
-      { onSuccess: () => toast.success('Task updated') }
+      { 
+        onSuccess: () => toast.success('Task updated'),
+        onError: (err) => toast.error(err.message || 'Failed to update task'),
+      }
     );
   };
 
@@ -42,8 +74,66 @@ function EditForm({ task, id }: { task: Task; id: string }) {
       <CardContent className="pt-6 space-y-4">
         <div className="space-y-2"><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
         <div className="space-y-2"><Label>Short Description</Label><Input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="A quick summary..." /></div>
-        <div className="space-y-2"><Label>Task Details (Markdown)</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-30 font-mono text-sm" /></div>
-        <div className="space-y-2"><Label>Requirements (Markdown)</Label><Textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} className="min-h-30 font-mono text-sm" /></div>
+        
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Task Details (Markdown)</Label>
+            <label className="text-xs text-japan-red cursor-pointer font-bold hover:underline">
+              Upload .md
+              <input type="file" accept=".md" className="hidden" onChange={(e) => handleFileUpload(e, 'description')} />
+            </label>
+          </div>
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-30 font-mono text-sm" />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Requirements (Markdown)</Label>
+            <label className="text-xs text-japan-red cursor-pointer font-bold hover:underline">
+              Upload .md
+              <input type="file" accept=".md" className="hidden" onChange={(e) => handleFileUpload(e, 'requirements')} />
+            </label>
+          </div>
+          <Textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} className="min-h-30 font-mono text-sm" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+              <SelectContent>
+                {TASK_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Difficulty</Label>
+            <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
+              <SelectTrigger><SelectValue placeholder="Select Difficulty" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Rank Required</Label>
+          <Select value={rankRequired} onValueChange={(v) => setRankRequired(v as Rank)}>
+            <SelectTrigger><SelectValue placeholder="Select Rank" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Ronin">Ronin</SelectItem>
+              <SelectItem value="Kenshi">Kenshi</SelectItem>
+              <SelectItem value="Samurai">Samurai</SelectItem>
+              <SelectItem value="Shogun">Shogun</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2"><Label>Points</Label><Input type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} /></div>
@@ -82,7 +172,7 @@ export default function AdminTaskDetailPage() {
 
       <h1 className="font-serif text-2xl font-bold text-primary-text">Edit Task</h1>
 
-      <EditForm task={task} id={id} />
+      <EditForm key={task.id} task={task} id={id} />
     </div>
   );
 }

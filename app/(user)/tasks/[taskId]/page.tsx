@@ -3,6 +3,7 @@
 import { useTaskDetail } from '@/hooks/queries/useTasks';
 import { useSubmissions, useCreateSubmission } from '@/hooks/queries/useSubmissions';
 import { useGithubRepos } from '@/hooks/queries/useUser';
+import { useTeamDetail } from '@/hooks/queries/useTeam';
 import { useSession } from '@/hooks/useSession';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -11,7 +12,7 @@ import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText, Star, ChevronRight, MessageSquare } from 'lucide-react';
+import { CheckCircle2, Clock, Users, BarChart, ExternalLink, Code2, Globe, FileText, Star, ChevronRight, MessageSquare, Shield } from 'lucide-react';
 import MarkdownPreview from '@/components/shared/MarkdownPreview';
 import CommentThread from '@/components/shared/CommentThread';
 import Link from 'next/link';
@@ -28,6 +29,13 @@ export default function TaskDetailPage() {
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('details');
   const { data: user } = useSession();
+  const { data: team } = useTeamDetail();
+
+  // Team submission guard: only the team leader can submit, and team must have 2+ members
+  const isTeamMember = !!team && team.members.some(m => m.userId === user?.id);
+  const isTeamLeader = !!team && team.members.some(m => m.userId === user?.id && m.role === 'leader');
+  const isIncompleteTeam = !!team && team.members.length < 2; // Solo leader in a clan
+  const canSubmit = !isTeamMember || (isTeamLeader && !isIncompleteTeam); // Solo users or leaders with 2+ members
 
   const isSubmitted = submissions?.some((sub) => sub.taskId === taskId && sub.status !== 'rejected');
   
@@ -39,7 +47,7 @@ export default function TaskDetailPage() {
   const userHasRank = userRankIdx >= taskRankIdx;
 
   const handleSubmit = () => {
-    if (!selectedRepo || isSubmitted) return;
+    if (!selectedRepo || isSubmitted || !canSubmit) return;
     submitMutation.mutate(
       {
         taskId,
@@ -245,6 +253,28 @@ export default function TaskDetailPage() {
                      Make sure the repository is <span className="text-japan-red font-bold">public</span> and contains your project code.
                    </p>
 
+                   {/* Team member (non-leader) warning */}
+                   {isTeamMember && !isTeamLeader && (
+                     <div className="mt-8 p-4 border border-amber-200 bg-amber-50 rounded-xl text-amber-800 flex items-start gap-3">
+                       <Shield className="w-5 h-5 mt-0.5 shrink-0" />
+                       <div>
+                         <p className="font-bold text-sm">Team Member Restriction</p>
+                         <p className="text-xs mt-1 leading-relaxed">Only the <strong>Team Leader</strong> can submit repositories on behalf of your clan. Contact your leader to submit this task.</p>
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Incomplete team warning (leader with no teammates) */}
+                   {isTeamLeader && isIncompleteTeam && (
+                     <div className="mt-8 p-4 border border-red-200 bg-red-50 rounded-xl text-red-800 flex items-start gap-3">
+                       <Users className="w-5 h-5 mt-0.5 shrink-0" />
+                       <div>
+                         <p className="font-bold text-sm">Incomplete Clan</p>
+                         <p className="text-xs mt-1 leading-relaxed">Your clan needs at least <strong>2 members</strong> to submit tasks. Invite a teammate using your join code, or <Link href="/team" className="underline font-bold text-red-600 hover:text-red-800">disband your clan</Link> and go solo.</p>
+                       </div>
+                     </div>
+                   )}
+
                    <div className="flex flex-col md:flex-row items-center justify-between mt-10 gap-4">
                       {isSubmitted ? (
                         <Link href={`/submissions/${submissions?.find(s => s.taskId === taskId)?.id}`} className="w-full md:w-auto">
@@ -263,15 +293,15 @@ export default function TaskDetailPage() {
                       {/* Custom brush button for submit */}
                       <button 
                         onClick={handleSubmit}
-                        disabled={isSubmitted || !selectedRepo || submitMutation.isPending || !userHasRank}
-                        title={!userHasRank ? `Requires rank: ${task.rankRequired}` : ''}
+                        disabled={isSubmitted || !selectedRepo || submitMutation.isPending || !userHasRank || !canSubmit}
+                        title={!canSubmit ? 'Only the team leader can submit' : !userHasRank ? `Requires rank: ${task.rankRequired}` : ''}
                         className="relative px-10 py-3 group w-full md:w-auto overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="absolute inset-0 bg-[#C8473D] rounded-[4px] group-hover:bg-[#B93A32] transition-colors"></div>
                         <div className="absolute -inset-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnPjxmaWx0ZXIgaWQ9J24nPjxmZVR1cmJ1bGVuY2UgdHlwZT0nZnJhY3RhbE5vaXNlJyBiYXNlRnJlcXVlbmN5PScwLjknIG51bU9jdGF2ZXM9JzMnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
                         <div className="absolute inset-0 border-[3px] border-transparent opacity-80" style={{borderImageSource: "url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M5,5 L95,5 L95,95 L5,95 Z\" fill=\"none\" stroke=\"%238A2722\" stroke-width=\"4\" stroke-dasharray=\"20 5\" stroke-dashoffset=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>')", borderImageSlice: "10", borderImageRepeat: "stretch"}}></div>
                         <div className="relative flex items-center justify-center gap-2 text-white font-bold tracking-widest text-sm z-10 drop-shadow-md">
-                          {!userHasRank ? 'LOCKED' : isSubmitted ? 'SUBMITTED' : submitMutation.isPending ? 'SUBMITTING...' : 'SUBMIT FOR REVIEW'}
+                          {isIncompleteTeam ? 'NEED TEAMMATES' : (!isTeamMember || isTeamLeader) ? (!userHasRank ? 'LOCKED' : isSubmitted ? 'SUBMITTED' : submitMutation.isPending ? 'SUBMITTING...' : 'SUBMIT FOR REVIEW') : 'LEADER ONLY'}
                           <span>&gt;</span>
                         </div>
                       </button>

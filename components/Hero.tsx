@@ -115,13 +115,13 @@ export default function Hero() {
 
       <div className="max-w-360 w-full mx-auto px-6 md:px-12 lg:px-24 h-full flex pt-24 pb-12 relative z-10">
         
-        {/* Left: Text Content (45%) */}
-        <div ref={heroContentRef} className="w-full md:w-[45%] h-full flex flex-col justify-center opacity-0">
+        {/* Left: Text Content (45% / 50%) */}
+        <div ref={heroContentRef} className="w-full lg:w-[50%] xl:w-[45%] h-full flex flex-col justify-center opacity-0">
           <p className="hero-sub text-sm tracking-[0.2em] text-(--color-secondary-text) mb-4">
             JOURNEY TO
           </p>
           
-          <h1 className="font-heading text-5xl md:text-8xl lg:text-[110px] leading-none mb-8 text-(--color-primary-text)">
+          <h1 className="font-onari text-5xl md:text-7xl lg:text-7xl xl:text-[90px] 2xl:text-[110px] leading-none mb-8 text-(--color-primary-text)">
             {"MASTERY".split("").map((char, i) => (
               <span 
                 key={i} 
@@ -133,12 +133,12 @@ export default function Hero() {
             ))}
           </h1>
           
-          <h2 className="hero-sub font-heading text-xl md:text-2xl text-(--color-japan-red) font-semibold tracking-widest mb-6">
-            BUILD. LAUNCH. IMPACT.
+          <h2 className="hero-sub font-heading text-xl md:text-2xl text-[var(--color-japan-red)] font-semibold tracking-widest mb-6">
+            RONIN TO SHOGUN
           </h2>
           
-          <p className="hero-sub text-(--color-secondary-text) max-w-md text-lg leading-relaxed mb-10">
-            A 4-week coding program for beginners and developers to turn one idea into a live product with real users.
+          <p className="hero-sub text-[var(--color-secondary-text)] max-w-md text-lg leading-relaxed mb-10">
+            A full-stack gamified learning platform inspired by the Japanese martial arts ranking system. Complete coding tasks, submit repositories for review, and climb the leaderboard.
           </p>
           
           <Link
@@ -151,8 +151,8 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Right: Visual (55%) */}
-        <div className="hidden md:flex w-[55%] h-full relative items-center justify-center">
+        {/* Right: Visual (55% / 50%) */}
+        <div className="hidden lg:flex lg:w-[50%] xl:w-[55%] h-full relative items-center justify-center">
           {/* Torii Gate Image Placeholder */}
           <div 
             ref={gateRef}
@@ -185,7 +185,7 @@ export default function Hero() {
 
           {/* Vertical Japanese Text */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-            <div className="relative font-heading text-4xl text-(--color-dark-red) writing-vertical-rl tracking-widest h-64">
+            <div className="relative font-onari text-4xl text-(--color-dark-red) writing-vertical-rl tracking-widest h-64">
               <div ref={jpTextRef} className="absolute inset-0 opacity-100 flex justify-center writing-vertical-rl" style={{ writingMode: 'vertical-rl'}}>
                 開発者コミュニティ
               </div>

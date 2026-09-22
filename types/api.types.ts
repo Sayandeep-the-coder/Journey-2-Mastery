@@ -3,6 +3,17 @@ export type Role = 'user' | 'judge' | 'admin';
 export type Rank = 'Ronin' | 'Kenshi' | 'Samurai' | 'Shogun' | 'Team';
 export type SubmissionStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export const TASK_CATEGORIES = [
+  'Frontend',
+  'Backend',
+  'Fullstack',
+  'DSA',
+  'System Design',
+  'AI/ML',
+  'DevOps',
+  'Documentation',
+] as const;
+export type TaskCategory = (typeof TASK_CATEGORIES)[number];
 
 // ─── User ───
 export interface User {
@@ -22,6 +33,9 @@ export interface User {
   discord?: string | null;
   instagram?: string | null;
   twitter?: string | null;
+  teamType?: TeamType;
+  teamName?: string | null;
+  teamMemberCount?: number;
   rank: Rank;
   score: number;
   currentTeamId?: string | null;
@@ -30,7 +44,14 @@ export interface User {
   team?: {
     id: string;
     name: string;
-    joinCode: string;
+    joinCode?: string;
+    score?: number;
+    rank?: number;
+    status?: string;
+    teamRole?: string;
+    memberCount?: number;
+    teamType?: TeamType;
+    members?: LeaderboardTeamMember[];
   } | null;
   createdAt?: string;
 }
@@ -55,13 +76,13 @@ export interface Task {
   shortDescription?: string;
   description: string;
   requirements?: string;
-  category: string;
+  category: TaskCategory | string;
   categoryName?: string;
   points: number;
   bonusPoints?: number;
   difficulty: Difficulty;
   rankRequired?: Rank;
-  deadline?: string;
+  deadline?: string | null;
   isActive?: boolean;
   status?: SubmissionStatus | 'submitted';
   rubric?: string;
@@ -197,6 +218,7 @@ export interface RepoInfo {
   updatedAt: string;
   language?: string;
   stargazersCount?: number;
+  fork?: boolean;
 }
 
 export interface RankConfig {
@@ -216,6 +238,8 @@ export interface UserDashboardData {
   rankProgress: number; // 0-100 percentage to next rank
   recentActivity: ActivityItem[];
   ranksConfig?: RankConfig[];
+  currentTask?: Task | null;
+  tasksAvailable?: number;
   stats: {
     totalPoints: number;
     tasksCompleted: number;
@@ -250,6 +274,7 @@ export interface AdminDashboardData {
   totalJudges: number;
   totalTasks: number;
   totalSubmissions: number;
+  totalTeams?: number;
   statusBreakdown: { status: string; count: number }[];
   topPerformers: { userId: string; userName: string; score: number; rank: Rank }[];
   unassignedCount: number;
@@ -316,6 +341,25 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export type TeamType = 'solo' | 'duo' | 'trio';
+
+export interface LeaderboardTeamMember {
+  id?: string;
+  userId?: string;
+  username?: string;
+  userName?: string;
+  fullName?: string | null;
+  avatarUrl?: string | null;
+  rank?: Rank;
+  role?: string;
+  teamRole?: 'leader' | 'member' | null;
+  score?: number;
+  bio?: string | null;
+  collegeName?: string | null;
+  branch?: string | null;
+  discord?: string | null;
+}
+
 // ─── Leaderboard ───
 export interface LeaderboardEntry {
   rank: number;
@@ -325,6 +369,10 @@ export interface LeaderboardEntry {
   score: number;
   tasksCompleted: number;
   userRank: Rank;
+  teamType?: TeamType;
+  teamName?: string | null;
+  teamId?: string | null;
+  teamMembers?: LeaderboardTeamMember[];
   scoreBreakdown?: { category: string; points: number }[];
 }
 
@@ -344,4 +392,49 @@ export interface TeamDetail {
   score: number;
   members: TeamMember[];
   joinCode?: string;
+}
+
+// ─── Admin Teams ───
+export interface AdminTeamMember {
+  id: string;
+  username: string;
+  fullName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  phone?: string | null;
+  collegeName?: string | null;
+  branch?: string | null;
+  year?: string | null;
+  bio?: string | null;
+  discord?: string | null;
+  score: number;
+  rank: Rank;
+  teamRole: 'leader' | 'member';
+  teamJoinedAt: string | null;
+}
+
+export interface AdminTeamItem {
+  id: string;
+  name: string;
+  joinCode: string;
+  status: 'incomplete' | 'active';
+  score: number;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  leader?: {
+    id: string;
+    username: string;
+    fullName?: string | null;
+    avatarUrl?: string | null;
+    email?: string | null;
+  } | null;
+  members: AdminTeamMember[];
+}
+
+export interface AdminTeamsStats {
+  totalTeams: number;
+  activeTeams: number;
+  incompleteTeams: number;
+  avgScore: number;
 }

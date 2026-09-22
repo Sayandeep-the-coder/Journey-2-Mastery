@@ -5,9 +5,11 @@ import * as adminService from "@/lib/services/admin.service";
 
 export const GET = apiHandler(async (req: Request, { params }: { params: any }) => {
 
+  const actor = new URL(req.url).searchParams.get("actor") || undefined;
+  const action = new URL(req.url).searchParams.get("action") || undefined;
   const cursor = new URL(req.url).searchParams.get("cursor") || undefined;
   const limit = parseInt(new URL(req.url).searchParams.get("limit") || "20", 10);
-  const result = await adminService.getAuditLog(cursor, limit);
+  const result = await adminService.getAuditLog({ actor, action, cursor, limit });
   return NextResponse.json({ success: true, data: result.items, meta: result.meta });
 
 });

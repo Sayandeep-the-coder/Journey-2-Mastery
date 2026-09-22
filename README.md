@@ -15,6 +15,13 @@ A full-stack gamified learning platform inspired by the Japanese martial arts ra
 
 ## ✨ Features
 
+### 🎨 Premium UI/UX & Aesthetics
+- **Hyper-Minimalist Japanese Design** — Off-white backgrounds, distinct sharp borders, and deep red accents.
+- **Bento Grid Architecture** — Modern asymmetric layout grids for landing page features and timeline.
+- **GSAP Animations** — Seamless scroll-triggered reveals, continuous marquees, and dynamic hover effects.
+- **Responsive Fluidity** — Horizontal snap carousels for mobile breakpoints to reduce vertical clutter.
+- **Custom Typography** — `Onari` font for striking all-caps headers alongside highly legible `Zilla Slab` body text.
+
 ### 👤 User Flow
 - **GitHub OAuth** login with one-click authentication
 - **Profile onboarding** — college, branch, year, bio

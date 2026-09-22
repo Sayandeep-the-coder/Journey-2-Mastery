@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useAuditLog } from '@/hooks/queries/useAuditLog';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,11 +17,12 @@ import { toast } from 'sonner';
 
 export default function AdminReportsPage() {
   const [actor, setActor] = useState('');
+  const debouncedActor = useDebounce(actor, 500);
   const [action, setAction] = useState('');
   const [exportingSubmissions, setExportingSubmissions] = useState(false);
   const [exportingUsers, setExportingUsers] = useState(false);
   const { data: logs, isLoading, isError, error, refetch } = useAuditLog({
-    actor: actor || undefined,
+    actor: debouncedActor || undefined,
     action: action || undefined,
   });
 
@@ -32,8 +34,8 @@ export default function AdminReportsPage() {
     try {
       await csvDownload('/admin/reports/submissions', 'submissions.csv');
       toast.success('Submissions CSV exported');
-    } catch (err: any) {
-      toast.error(err.message || 'Export failed');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExportingSubmissions(false);
     }
@@ -44,8 +46,8 @@ export default function AdminReportsPage() {
     try {
       await csvDownload('/admin/reports/users', 'users.csv');
       toast.success('Users CSV exported');
-    } catch (err: any) {
-      toast.error(err.message || 'Export failed');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExportingUsers(false);
     }

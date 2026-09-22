@@ -103,7 +103,10 @@ export default function GithubSubmissionBlock({ taskId, isSubmitted }: GithubSub
                 ) : (
                   repos?.map((repo) => (
                     <SelectItem key={repo.repoId} value={repo.repoId}>
-                      {repo.name}
+                      <span className="flex items-center gap-2">
+                        <span>{repo.name}</span>
+                        {repo.fork && <span className="text-[10px] text-muted-text">(Fork)</span>}
+                      </span>
                     </SelectItem>
                   ))
                 )}

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { AuditLogEntry } from '@/types/api.types';
 
@@ -14,5 +14,6 @@ export function useAuditLog(filters?: { actor?: string; action?: string; page?: 
     queryKey: ['admin', 'audit-log', filters],
     queryFn: () => apiFetch<AuditLogEntry[]>(`/admin/audit-log${qs ? `?${qs}` : ''}`),
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 }

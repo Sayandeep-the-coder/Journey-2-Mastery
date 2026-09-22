@@ -5,7 +5,7 @@ import UnassignedQueueAlert from '@/components/admin/UnassignedQueueAlert';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Scale, ListChecks, Send, BarChart3, Castle } from 'lucide-react';
+import { Users, Scale, ListChecks, Send, BarChart3, Castle, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -27,6 +27,7 @@ export default function AdminDashboard() {
 
   const stats = [
     { label: 'Total Warriors', value: data.totalUsers, icon: Users, color: 'bg-sky-50 text-sky-600 border-sky-100', href: '/admin/users' },
+    { label: 'Clans / Teams', value: data.totalTeams ?? 0, icon: Shield, color: 'bg-rose-50 text-rose-600 border-rose-100', href: '/admin/teams' },
     { label: 'Total Masters', value: data.totalJudges, icon: Scale, color: 'bg-purple-50 text-purple-600 border-purple-100', href: '/admin/judges' },
     { label: 'Active Trials', value: data.totalTasks, icon: ListChecks, color: 'bg-emerald-50 text-emerald-600 border-emerald-100', href: '/admin/tasks' },
     { label: 'Submissions', value: data.totalSubmissions, icon: Send, color: 'bg-amber-50 text-amber-600 border-amber-100', href: '/admin/submissions' },
@@ -53,7 +54,7 @@ export default function AdminDashboard() {
       <UnassignedQueueAlert />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 stagger-fade">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

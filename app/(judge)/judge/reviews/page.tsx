@@ -1,42 +1,24 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { useJudgeReviews } from '@/hooks/queries/useJudgeQueue';
+import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Star, Clock, Mail, Search, X, Loader2 } from 'lucide-react';
+import { Star, Clock, Mail, Search, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function JudgeReviewsPage() {
   const [searchEmail, setSearchEmail] = useState('');
-  const [debouncedEmail, setDebouncedEmail] = useState('');
+  const debouncedSearchEmail = useDebounce(searchEmail, 500);
+  const { data: reviews, isLoading, isError, error, refetch } = useJudgeReviews(debouncedSearchEmail);
 
-  // Debounce API request by 300ms to avoid unnecessary network calls
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedEmail(searchEmail);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchEmail]);
-
-  const { data: reviews, isLoading, isFetching, isError, error, refetch } = useJudgeReviews(debouncedEmail);
-
-  // Instant client-side filter so typing feels 0ms fast
-  const filteredReviews = useMemo(() => {
-    if (!reviews) return [];
-    if (!searchEmail.trim()) return reviews;
-    const query = searchEmail.trim().toLowerCase();
-    return reviews.filter(
-      (r) =>
-        r.userEmail?.toLowerCase().includes(query) ||
-        r.userName?.toLowerCase().includes(query) ||
-        r.taskTitle?.toLowerCase().includes(query)
-    );
-  }, [reviews, searchEmail]);
+  if (isLoading) return <LoadingSkeleton variant="table" />;
+  if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
@@ -46,7 +28,7 @@ export default function JudgeReviewsPage() {
           <p className="text-secondary-text mt-1">All reviews you&apos;ve submitted.</p>
         </div>
 
-        {/* Search by Participant Email - Always mounted to preserve input focus & state */}
+        {/* Search by Participant Email */}
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-text pointer-events-none" />
           <Input
@@ -56,9 +38,7 @@ export default function JudgeReviewsPage() {
             onChange={(e) => setSearchEmail(e.target.value)}
             className="pl-9 pr-9"
           />
-          {isFetching ? (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-text animate-spin pointer-events-none" />
-          ) : searchEmail ? (
+          {searchEmail && (
             <button
               type="button"
               onClick={() => setSearchEmail('')}
@@ -67,22 +47,17 @@ export default function JudgeReviewsPage() {
             >
               <X className="h-3.5 w-3.5" />
             </button>
-          ) : null}
+          )}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {isLoading && !reviews ? (
-        <LoadingSkeleton variant="table" />
-      ) : isError && !reviews ? (
-        <ErrorState error={error} onRetry={refetch} />
-      ) : filteredReviews.length === 0 ? (
+      {!reviews || reviews.length === 0 ? (
         searchEmail ? (
           <div className="py-8 text-center space-y-3">
             <EmptyState
               icon="list"
               title="No matching reviews"
-              message={`No reviews found matching "${searchEmail}".`}
+              message={`No reviews found matching participant email "${searchEmail}".`}
             />
             <Button variant="outline" size="sm" onClick={() => setSearchEmail('')}>
               Clear search filter
@@ -93,7 +68,7 @@ export default function JudgeReviewsPage() {
         )
       ) : (
         <div className="space-y-3 stagger-fade">
-          {filteredReviews.map((review) => (
+          {reviews.map((review) => (
             <Link key={review.id} href={`/judge/reviews/${review.id}`} className="block">
               <Card className="hover:shadow-md hover:border-japan-red/20 transition-all cursor-pointer">
                 <CardContent className="pt-4 flex items-center justify-between">

@@ -21,12 +21,11 @@ export const GET = apiHandler(async (req: Request) => {
     rows = [];
   }
 
-  const header = "Rank,Username,Full Name,Tier,Score,Tasks Completed";
+  const header = "Rank,Clan / Team,Martial Title,Score,Tasks Solved";
   const csvRows = rows.map((row) =>
     [
       row.leaderboard_rank,
       `"${(row.username as string || "").replace(/"/g, '""')}"`,
-      `"${(row.full_name as string || "").replace(/"/g, '""')}"`,
       row.rank,
       row.total_score,
       row.tasks_completed,

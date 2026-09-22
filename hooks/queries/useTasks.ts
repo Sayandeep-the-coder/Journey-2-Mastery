@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { Task, Category, Submission } from '@/types/api.types';
+import { TASK_CATEGORIES } from '@/types/api.types';
 
 interface TaskFilters {
   category?: string;
@@ -22,6 +23,7 @@ export function useTasks(filters?: TaskFilters) {
     queryKey: ['user', 'tasks', filters],
     queryFn: () => apiFetch<Task[]>(`/user/tasks${buildTaskQuery(filters)}`),
     staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -54,6 +56,7 @@ export function useTaskCategories() {
   return useQuery<Category[], Error>({
     queryKey: ['tasks', 'categories'],
     queryFn: () => apiFetch<Category[]>('/user/tasks/categories'),
+    initialData: TASK_CATEGORIES.map((c) => ({ id: c, name: c })),
     staleTime: 60 * 1000,
   });
 }

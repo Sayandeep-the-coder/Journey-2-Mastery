@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
 import type { JudgeDashboardData, JudgeWorkload, Submission, Review, ReviewCriterion } from '@/types/api.types';
 
@@ -21,14 +21,14 @@ export function useJudgeWorkload() {
 export function useJudgeQueue(status?: string, email?: string) {
   const queryParams = new URLSearchParams();
   if (status) queryParams.set('status', status);
-  if (email && email.trim()) queryParams.set('email', email.trim());
+  if (email) queryParams.set('email', email);
   const params = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   return useQuery<Submission[], Error>({
-    queryKey: ['judge', 'queue', status, email?.trim()],
+    queryKey: ['judge', 'queue', status, email],
     queryFn: () => apiFetch<Submission[]>(`/judge/submissions${params}`),
     staleTime: 30 * 1000,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -67,14 +67,14 @@ export function useSubmitReview() {
 
 export function useJudgeReviews(email?: string) {
   const queryParams = new URLSearchParams();
-  if (email && email.trim()) queryParams.set('email', email.trim());
+  if (email) queryParams.set('email', email);
   const params = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   return useQuery<Review[], Error>({
-    queryKey: ['judge', 'reviews', email?.trim()],
+    queryKey: ['judge', 'reviews', email],
     queryFn: () => apiFetch<Review[]>(`/judge/reviews${params}`),
     staleTime: 60 * 1000,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 }
 
