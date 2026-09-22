@@ -16,6 +16,8 @@ import { checkAndPromoteUser, syncUserScore, syncTeamScore } from "./user.servic
 import { env } from "../config/env";
 import { enrichReviewWithScores } from "./judge.service";
 import { createNotification } from "./notification.service";
+import { logger } from "../logger";
+import * as emailService from "./email.service";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -697,6 +699,18 @@ export async function createPost(adminId: string, data: CreatePostInput) {
     .values({ ...data, createdBy: adminId })
     .returning();
 
+  // If the post is published, notify all active participants via email
+  if (post && post.isPublished) {
+    emailService.sendNewPostNotificationEmail({
+      id: post.id,
+      title: post.title,
+      description: post.description,
+      posterImageUrl: post.posterImageUrl,
+    }).catch((err) => {
+      logger.error({ err, postId: post.id }, "Failed to send post notification emails");
+    });
+  }
+
   return post!;
 }
 
@@ -735,6 +749,11 @@ export async function updatePost(
   postId: string,
   data: UpdatePostInput
 ) {
+  const existing = await db.query.communityPosts.findFirst({
+    where: eq(communityPosts.id, postId),
+  });
+  if (!existing) throw notFound("Post", postId);
+
   const [updated] = await db
     .update(communityPosts)
     .set({ ...data, updatedAt: new Date() })
@@ -742,6 +761,18 @@ export async function updatePost(
     .returning();
 
   if (!updated) throw notFound("Post", postId);
+
+  // If post wasn't published before, but is published now
+  if (!existing.isPublished && updated.isPublished) {
+    emailService.sendNewPostNotificationEmail({
+      id: updated.id,
+      title: updated.title,
+      description: updated.description,
+      posterImageUrl: updated.posterImageUrl,
+    }).catch((err) => {
+      logger.error({ err, postId: updated.id }, "Failed to send post notification emails");
+    });
+  }
 
   await db.insert(auditLog).values({
     actorId: adminId,

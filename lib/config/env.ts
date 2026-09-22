@@ -56,6 +56,14 @@ const envSchema = z.object({
 
   // Review
   REVIEW_EDIT_WINDOW_HOURS: z.coerce.number().int().positive().default(24),
+
+  // Email (SMTP)
+  SMTP_HOST: z.string().default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.preprocess((val) => val === "true" || val === true, z.boolean()).default(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

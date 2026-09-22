@@ -12,6 +12,7 @@ import { CACHE_KEYS } from "../utils/constants";
 import { conflict, unauthorized, notFound, badRequest } from "../utils/apiError";
 import type { GitHubUserProfile } from "@/types";
 import type { CompleteProfileInput } from "../validators/auth.validator";
+import * as emailService from "./email.service";
 
 // ──────────────────────────────────────────────
 // GitHub OAuth
@@ -213,6 +214,17 @@ export async function findOrCreateUser(
   if (newUser) {
     newUser.role = newUser.role.trim() as 'user' | 'judge' | 'admin';
     newUser.rank = newUser.rank.trim() as 'Ronin' | 'Kenshi' | 'Samurai' | 'Shogun';
+
+    // Dispatch welcome email asynchronously if user has an email
+    if (newUser.email) {
+      emailService.sendWelcomeEmail({
+        email: newUser.email,
+        fullName: newUser.fullName,
+        username: newUser.username,
+      }).catch((err) => {
+        logger.error({ err, userId: newUser.id }, "Failed to send welcome email");
+      });
+    }
   }
   return newUser!;
 }

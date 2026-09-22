@@ -15,7 +15,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, ListChecks, Send, Trophy, FileText, User, Bell, Settings,
   Scale, ClipboardList, Star, Users, Shield, Newspaper,
-  FileBarChart, LogOut, Menu, PanelLeft, Home,
+  FileBarChart, LogOut, Menu, PanelLeft, Home, Mail,
 } from 'lucide-react';
 import type { Role } from '@/types/api.types';
 
@@ -55,6 +55,7 @@ const adminNav: NavItem[] = [
   { label: 'Submissions', href: '/admin/submissions', icon: Send },
   { label: 'Leaderboard', href: '/admin/leaderboard', icon: Trophy },
   { label: 'Posts', href: '/admin/posts', icon: Newspaper },
+  { label: 'Broadcast', href: '/admin/emails', icon: Mail },
   { label: 'Reports', href: '/admin/reports', icon: FileBarChart },
 ];
 
