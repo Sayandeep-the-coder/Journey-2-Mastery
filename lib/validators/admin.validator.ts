@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { TASK_CATEGORIES } from "../db/schema";
 
+export const criterionSchema = z.object({
+  id: z.string().min(1, "Criterion ID is required"),
+  name: z.string().min(1, "Criterion name is required"),
+  description: z.string().optional().default(""),
+  maxScore: z.coerce.number().int().min(1, "Max score must be at least 1"),
+});
+
 /**
  * POST /api/v1/admin/tasks
  */
@@ -15,7 +22,12 @@ export const createTaskSchema = z.object({
   points: z.number().int().min(0).max(1000),
   bonusPoints: z.number().int().min(0).default(0),
   deadline: z.preprocess((arg) => (arg === '' || arg == null ? undefined : new Date(arg as string)), z.date().optional()),
-});
+  criteria: z.array(criterionSchema).min(1, "At least one judging criterion is required"),
+  passingScore: z.coerce.number().int().min(1, "Approval lowest score must be at least 1"),
+}).refine(
+  (data) => data.passingScore <= data.criteria.reduce((sum, c) => sum + c.maxScore, 0),
+  { message: "Passing score cannot exceed total maximum criteria score", path: ["passingScore"] }
+);
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
@@ -34,6 +46,8 @@ export const updateTaskSchema = z.object({
   bonusPoints: z.number().int().min(0).optional(),
   deadline: z.preprocess((arg) => (arg === '' || arg == null ? null : new Date(arg as string)), z.date().nullable().optional()),
   isActive: z.boolean().optional(),
+  criteria: z.array(criterionSchema).min(1).optional(),
+  passingScore: z.coerce.number().int().min(1).optional(),
 });
 
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

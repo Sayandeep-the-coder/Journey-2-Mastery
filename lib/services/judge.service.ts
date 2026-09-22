@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql, ilike } from "drizzle-orm";
+import { eq, and, gt, asc, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { users, submissions, reviews } from "../db/schema";
 import { env } from "../config/env";
@@ -8,6 +8,7 @@ import { NOTIFICATION_TYPES } from "../utils/constants";
 import type { SubmitReviewInput, EditReviewInput } from "../validators/judge.validator";
 import { checkAndPromoteUser, syncUserScore, syncTeamScore } from "./user.service";
 import { createNotification } from "./notification.service";
+import type { ReviewCriterion } from "@/types/api.types";
 
 const criteriaMap: Record<string, { name: string; maxScore: number }> = {
   codeQuality: { name: "Code Quality", maxScore: 25 },
@@ -17,15 +18,44 @@ const criteriaMap: Record<string, { name: string; maxScore: number }> = {
   creativity: { name: "Creativity", maxScore: 20 },
 };
 
-export function enrichReviewWithScores<T extends Record<string, unknown>>(review: T | null) {
+export function enrichReviewWithScores<T extends Record<string, unknown>>(
+  review: T | null,
+  taskCriteria?: ReviewCriterion[]
+) {
   if (!review) return null;
   const breakdown = (review.scoreBreakdown as Record<string, number>) || {};
-  const scores = Object.entries(criteriaMap).map(([id, info]) => ({
-    criterionId: id,
-    criterionName: info.name,
-    score: breakdown[id] ?? 0,
-    maxScore: info.maxScore,
-  }));
+
+  const sub = review.submission as { task?: { criteria?: ReviewCriterion[] } } | undefined;
+  const t = review.task as { criteria?: ReviewCriterion[] } | undefined;
+  const criteria = taskCriteria || sub?.task?.criteria || t?.criteria;
+
+  let scores;
+  if (Array.isArray(criteria) && criteria.length > 0) {
+    scores = criteria.map((c) => ({
+      criterionId: c.id,
+      criterionName: c.name,
+      score: breakdown[c.id] ?? 0,
+      maxScore: c.maxScore,
+    }));
+  } else {
+    const breakdownKeys = Object.keys(breakdown);
+    if (breakdownKeys.length > 0) {
+      scores = breakdownKeys.map((id) => ({
+        criterionId: id,
+        criterionName: criteriaMap[id]?.name || id,
+        score: breakdown[id] ?? 0,
+        maxScore: criteriaMap[id]?.maxScore ?? 100,
+      }));
+    } else {
+      scores = Object.entries(criteriaMap).map(([id, info]) => ({
+        criterionId: id,
+        criterionName: info.name,
+        score: breakdown[id] ?? 0,
+        maxScore: info.maxScore,
+      }));
+    }
+  }
+
   return {
     ...review,
     scores,
@@ -198,7 +228,7 @@ export async function getSubmissionForReview(judgeId: string, submissionId: stri
     autoAssigned: submission.autoAssigned,
     submittedAt: submission.submittedAt,
     score: submission.review?.totalScore ?? null,
-    review: enrichReviewWithScores(submission.review),
+    review: enrichReviewWithScores(submission.review, (submission.task?.criteria as ReviewCriterion[] | undefined)),
     task: submission.task,
     user: submission.user,
   };
@@ -216,6 +246,7 @@ export async function submitReview(
   // Verify submission is assigned to this judge
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
+    with: { task: true },
   });
 
   if (!submission) throw notFound("Submission", submissionId);
@@ -257,7 +288,8 @@ export async function submitReview(
     totalScore = 0;
   }
 
-  const decision = data.decision || (totalScore >= 50 ? "approved" : "rejected");
+  const passingScore = submission.task?.passingScore ?? 50;
+  const decision = data.decision || (totalScore >= passingScore ? "approved" : "rejected");
 
   // Create review
   const [review] = await db
@@ -289,9 +321,6 @@ export async function submitReview(
     await syncUserScore(submission.userId);
   }
 
-  // Enqueue leaderboard recalculation
-  // await leaderboardQueue.add("recalculate", {});
-
   // Enqueue notification for the user
   await createNotification({
     userId: submission.userId,
@@ -302,7 +331,7 @@ export async function submitReview(
     relatedEntityId: submissionId,
   });
 
-  return enrichReviewWithScores(review)!;
+  return enrichReviewWithScores(review, (submission.task?.criteria as ReviewCriterion[] | undefined))!;
 }
 
 export async function editReview(
@@ -312,7 +341,11 @@ export async function editReview(
 ) {
   const review = await db.query.reviews.findFirst({
     where: eq(reviews.id, reviewId),
-    with: { submission: true },
+    with: { 
+      submission: {
+        with: { task: true }
+      } 
+    },
   });
 
   if (!review) throw notFound("Review", reviewId);
@@ -360,6 +393,16 @@ export async function editReview(
     updated = { ...dbUpdated!, submission: review.submission };
   }
 
+  // Update submission status based on passing score or explicit decision
+  const passingScore = review.submission?.task?.passingScore ?? 50;
+  const decision = data.decision || (totalScore !== undefined ? (totalScore >= passingScore ? "approved" : "rejected") : undefined);
+  if (decision && review.submission) {
+    await db.update(submissions).set({ status: decision }).where(eq(submissions.id, review.submissionId));
+    if (decision === "approved") {
+      await checkAndPromoteUser(review.submission.userId, review.submission.taskId);
+    }
+  }
+
   // Trigger leaderboard recalc if score changed
   if (totalScore !== undefined && review.submission) {
     if (review.submission.teamId) {
@@ -367,10 +410,9 @@ export async function editReview(
     } else {
       await syncUserScore(review.submission.userId);
     }
-    // await leaderboardQueue.add("recalculate", {});
   }
 
-  return enrichReviewWithScores(updated)!;
+  return enrichReviewWithScores(updated, (review.submission?.task?.criteria as ReviewCriterion[] | undefined))!;
 }
 
 export async function getReviews(judgeId: string, cursor?: string, limit = 20, searchEmail?: string) {

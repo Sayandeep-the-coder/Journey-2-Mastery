@@ -40,10 +40,10 @@ export function useJudgeSubmission(id: string) {
   });
 }
 
-export function useJudgeCriteria(taskType?: string) {
-  const params = taskType ? `?taskType=${taskType}` : '';
+export function useJudgeCriteria(taskId?: string) {
+  const params = taskId ? `?taskId=${taskId}` : '';
   return useQuery<ReviewCriterion[], Error>({
-    queryKey: ['judge', 'criteria', taskType],
+    queryKey: ['judge', 'criteria', taskId],
     queryFn: () => apiFetch<ReviewCriterion[]>(`/judge/criteria${params}`),
     staleTime: 10 * 60 * 1000,
   });

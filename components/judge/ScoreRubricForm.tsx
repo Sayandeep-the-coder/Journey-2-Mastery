@@ -9,8 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 
+import type { ReviewCriterion } from '@/types/api.types';
+
 interface ScoreRubricFormProps {
+  taskId?: string;
   taskType?: string;
+  passingScore?: number;
+  initialCriteria?: ReviewCriterion[];
   onSubmit: (scores: { criterionId: string; score: number }[], feedback: string) => void;
   isPending?: boolean;
   initialScores?: { criterionId: string; score: number }[];
@@ -18,13 +23,17 @@ interface ScoreRubricFormProps {
 }
 
 export default function ScoreRubricForm({
+  taskId,
   taskType,
+  passingScore,
+  initialCriteria,
   onSubmit,
   isPending = false,
   initialScores,
   initialFeedback = '',
 }: ScoreRubricFormProps) {
-  const { data: criteria, isLoading } = useJudgeCriteria(taskType);
+  const { data: fetchedCriteria, isLoading } = useJudgeCriteria(taskId || taskType);
+  const criteria = initialCriteria && initialCriteria.length > 0 ? initialCriteria : fetchedCriteria;
   const [scores, setScores] = useState<Record<string, number>>(
     initialScores?.reduce((acc, s) => ({ ...acc, [s.criterionId]: s.score }), {} as Record<string, number>) || {}
   );
@@ -91,12 +100,32 @@ export default function ScoreRubricForm({
 
       <Separator />
 
-      {/* Live Total */}
-      <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-secondary-bg">
-        <span className="font-serif font-semibold text-primary-text">Total Score</span>
-        <span className="text-2xl font-bold text-japan-red">
-          {totalScore} <span className="text-sm font-normal text-muted-text">/ {maxTotal}</span>
-        </span>
+      {/* Live Total & Approval Status */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-lg bg-secondary-bg border border-borders">
+        <div>
+          <span className="font-serif font-semibold text-primary-text block">Total Score</span>
+          {passingScore !== undefined && (
+            <span className="text-xs text-muted-text">
+              Min Approval Score: <span className="font-semibold text-primary-text">{passingScore}</span> / {maxTotal}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {passingScore !== undefined && (
+            <span
+              className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
+                totalScore >= passingScore
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  : 'bg-red-50 text-red-700 border-red-300'
+              }`}
+            >
+              {totalScore >= passingScore ? 'Passing (Approved)' : 'Below Threshold (Rejected)'}
+            </span>
+          )}
+          <span className="text-2xl font-bold text-japan-red">
+            {totalScore} <span className="text-sm font-normal text-muted-text">/ {maxTotal}</span>
+          </span>
+        </div>
       </div>
 
       {/* Feedback */}
