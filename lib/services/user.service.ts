@@ -6,9 +6,10 @@ import { isRankSufficient, STATUS_PENDING, RANK_ORDER, NOTIFICATION_TYPES } from
 import { logger } from "../logger";
 import type { CreateSubmissionInput, UpdateSubmissionInput, UpdateProfileInput, TaskFilterInput } from "../validators/user.validator";
 import type { Rank, TaskCategory } from "../db/schema";
-import { enrichReviewWithScores } from "./judge.service";
+import { enrichReviewWithScores, getPreviousJudgedSubmissions } from "./judge.service";
 import { assignJudge } from "./assignment.service";
 import { createNotification } from "./notification.service";
+import type { ReviewCriterion } from "@/types/api.types";
 
 // ──────────────────────────────────────────────
 // Dashboard
@@ -147,11 +148,12 @@ export async function getDashboard(userId: string) {
     }
   }
 
-  // Visible and active tasks for user's rank
+  // Visible and active tasks for user's rank on the main line
   const availableRanks = getAvailableRanks(effectiveRank);
   const activeTasks = await db.query.tasks.findMany({
     where: and(
       eq(tasks.isActive, true),
+      eq(tasks.track, "main"),
       inArray(tasks.rankRequired, availableRanks)
     ),
     orderBy: [asc(tasks.createdAt), asc(tasks.id)],
@@ -198,9 +200,31 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
 
   const conditions = [
     eq(tasks.isActive, true),
-    inArray(tasks.rankRequired, availableRanks),
   ];
 
+  if (filters.track === "web3") {
+    conditions.push(eq(tasks.track, "web3"));
+  } else if (filters.track === "main") {
+    conditions.push(
+      eq(tasks.track, "main"),
+      inArray(tasks.rankRequired, availableRanks)
+    );
+  } else {
+    // All tracks: Web3 tasks are open to all, main tasks require available rank
+    conditions.push(
+      or(
+        eq(tasks.track, "web3"),
+        and(
+          eq(tasks.track, "main"),
+          inArray(tasks.rankRequired, availableRanks)
+        )
+      )!
+    );
+  }
+
+  if (filters.taskType) {
+    conditions.push(eq(tasks.taskType, filters.taskType));
+  }
   if (filters.category) {
     conditions.push(eq(tasks.category, filters.category as TaskCategory));
   }
@@ -361,7 +385,7 @@ export async function createSubmission(userId: string, data: CreateSubmissionInp
 
   if (!user) throw notFound("User", userId);
 
-  if (!isRankSufficient(user.rank, task.rankRequired as Rank)) {
+  if (task.track !== "web3" && !isRankSufficient(user.rank, task.rankRequired as Rank)) {
     throw new AppError("RANK_REQUIREMENT_NOT_MET", `Your rank (${user.rank}) is insufficient for this task. Required: ${task.rankRequired}`, 403);
   }
 
@@ -510,13 +534,37 @@ export async function getSubmissionById(userId: string, submissionId: string) {
     where: eq(submissions.id, submissionId),
     with: {
       task: true,
-      review: true,
-      assignedJudge: { columns: { id: true, username: true } },
+      review: {
+        with: {
+          judge: {
+            columns: { id: true, username: true, fullName: true, avatarUrl: true },
+          },
+        },
+      },
+      assignedJudge: { columns: { id: true, username: true, fullName: true, avatarUrl: true } },
     },
   });
 
   if (!submission) throw notFound("Submission", submissionId);
-  if (submission.userId !== userId) throw forbidden("You can only view your own submissions");
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { currentTeamId: true },
+  });
+  const isTeamMember = !!(submission.teamId && user?.currentTeamId === submission.teamId);
+
+  if (submission.userId !== userId && !isTeamMember) {
+    throw forbidden("You can only view your own submissions");
+  }
+
+  const previousJudgedSubmissions = await getPreviousJudgedSubmissions(
+    submission.id,
+    submission.userId,
+    submission.teamId,
+    submission.taskId
+  );
+
+  const judge = submission.review?.judge || submission.assignedJudge;
 
   return {
     id: submission.id,
@@ -528,12 +576,13 @@ export async function getSubmissionById(userId: string, submissionId: string) {
     repoName: submission.repoName,
     status: submission.status,
     assignedJudgeId: submission.assignedJudgeId,
-    judgeName: submission.assignedJudge?.username,
+    judgeName: judge?.fullName || judge?.username,
     autoAssigned: submission.autoAssigned,
     submittedAt: submission.submittedAt,
     score: submission.review?.totalScore ?? null,
-    review: enrichReviewWithScores(submission.review),
+    review: enrichReviewWithScores(submission.review, (submission.task?.criteria as ReviewCriterion[] | undefined)),
     task: submission.task,
+    previousJudgedSubmissions,
   };
 }
 

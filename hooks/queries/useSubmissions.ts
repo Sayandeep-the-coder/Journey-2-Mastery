@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
-import type { Submission } from '@/types/api.types';
+import type { Submission, PreviousJudgedSubmission } from '@/types/api.types';
 
 export function useSubmissions(status?: string) {
   const params = status ? `?status=${status}` : '';
@@ -16,6 +16,15 @@ export function useSubmission(id: string) {
     queryKey: ['user', 'submissions', id],
     queryFn: () => apiFetch<Submission>(`/user/submissions/${id}`),
     enabled: !!id,
+  });
+}
+
+export function useSubmissionHistory(id: string) {
+  return useQuery<PreviousJudgedSubmission[], Error>({
+    queryKey: ['submissions', id, 'history'],
+    queryFn: () => apiFetch<PreviousJudgedSubmission[]>(`/submissions/${id}/history`),
+    enabled: !!id,
+    staleTime: 60 * 1000,
   });
 }
 

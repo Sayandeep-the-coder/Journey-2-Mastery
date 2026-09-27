@@ -16,13 +16,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, EyeOff } from 'lucide-react';
+import { Plus, Trash2, EyeOff, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { taskSchema, type TaskForm } from '@/lib/validators/schemas';
-import { TASK_CATEGORIES } from '@/types/api.types';
+import { TASK_CATEGORIES, WEB3_TASK_TYPES, type Task } from '@/types/api.types';
 
 const defaultCriteria = [
   { id: "codeQuality", name: "Code Quality", maxScore: 25, description: "Clean, readable, well-structured code" },
@@ -30,6 +30,14 @@ const defaultCriteria = [
   { id: "documentation", name: "Documentation", maxScore: 15, description: "README, comments, and code documentation" },
   { id: "testing", name: "Testing", maxScore: 15, description: "Test coverage and test quality" },
   { id: "creativity", name: "Creativity", maxScore: 20, description: "Innovation, UX, and going above requirements" },
+];
+
+const web3DefaultCriteria = [
+  { id: "security", name: "Contract Security & Safety", maxScore: 25, description: "Reentrancy guards, access controls, audit rigor" },
+  { id: "gasOptimization", name: "Gas Efficiency & Performance", maxScore: 20, description: "Optimized storage, opcode efficiency, calldata usage" },
+  { id: "functionality", name: "Protocol & dApp Logic", maxScore: 25, description: "Smart contract methods, state transitions, events" },
+  { id: "testing", name: "Testing (Hardhat / Foundry)", maxScore: 15, description: "Fuzzing, unit and integration test coverage" },
+  { id: "documentation", name: "Documentation & NatSpec", maxScore: 15, description: "NatSpec comments, diagram, deployment instructions" },
 ];
 
 export default function AdminTasksPage() {
@@ -46,24 +54,28 @@ export default function AdminTasksPage() {
   const toggleAllTasks = useToggleAllTasks();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<TaskForm>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(taskSchema) as any,
     defaultValues: {
+      track: 'main',
+      category: 'Frontend',
       bonusPoints: 0,
       criteria: defaultCriteria,
       passingScore: 50,
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const watchedTrack = useWatch({ control: form.control, name: 'track' }) || 'main';
+
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: "criteria",
   });
 
-  const watchedCriteria = form.watch('criteria') || [];
-  const totalMaxCriteria = watchedCriteria.reduce((sum, c) => sum + (Number(c.maxScore) || 0), 0);
-  const watchedPassingScore = form.watch('passingScore') || 0;
+  const watchedCriteria = useWatch({ control: form.control, name: 'criteria' }) || [];
+  const totalMaxCriteria = watchedCriteria.reduce((sum, c) => sum + (Number(c?.maxScore) || 0), 0);
+  const watchedPassingScore = useWatch({ control: form.control, name: 'passingScore' }) || 0;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'description' | 'requirements') => {
     const file = e.target.files?.[0];
@@ -79,6 +91,9 @@ export default function AdminTasksPage() {
   const handleCreate = (data: TaskForm) => {
     const formattedData = {
       ...data,
+      track: data.track || 'main',
+      category: data.track === 'web3' ? 'Web3' : data.category,
+      taskType: data.track === 'web3' ? (data.taskType || 'Smart Contract') : undefined,
       criteria: data.criteria.map((c, i) => ({
         ...c,
         id: c.id?.trim() ? c.id : (c.name.toLowerCase().replace(/[^a-z0-9]/g, '') || `criterion_${i + 1}`),
@@ -87,11 +102,13 @@ export default function AdminTasksPage() {
       passingScore: Number(data.passingScore),
     };
 
-    createTask.mutate(formattedData as any, {
+    createTask.mutate(formattedData as unknown as Partial<Task>, {
       onSuccess: () => {
         toast.success('Task created');
         setDialogOpen(false);
         form.reset({
+          track: 'main',
+          category: 'Frontend',
           bonusPoints: 0,
           criteria: defaultCriteria,
           passingScore: 50,
@@ -167,25 +184,77 @@ export default function AdminTasksPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Controller name="category" control={form.control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Label>Track</Label>
+                  <Controller name="track" control={form.control} render={({ field }) => (
+                    <Select
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        if (val === 'web3') {
+                          form.setValue('category', 'Web3');
+                          form.setValue('taskType', 'Smart Contract');
+                          replace(web3DefaultCriteria);
+                        } else {
+                          form.setValue('category', 'Frontend');
+                          form.setValue('taskType', undefined);
+                          replace(defaultCriteria);
+                        }
+                      }}
+                      value={field.value || 'main'}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select Track" /></SelectTrigger>
                       <SelectContent>
-                        {categoryOptions.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
+                        <SelectItem value="main">Main Track (Martial Journey)</SelectItem>
+                        <SelectItem value="web3">Web3 Track (Decentralized Path)</SelectItem>
                       </SelectContent>
                     </Select>
                   )} />
-                  {form.formState.errors.category && <p className="text-xs text-red-600">{form.formState.errors.category.message}</p>}
                 </div>
+
                 <div className="space-y-2">
                   <Label>Difficulty</Label>
                   <Controller name="difficulty" control={form.control} render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="easy">Easy</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="hard">Hard</SelectItem></SelectContent></Select>
                   )} />
                   {form.formState.errors.difficulty && <p className="text-xs text-red-600">{form.formState.errors.difficulty.message}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {watchedTrack === 'web3' ? (
+                  <div className="space-y-2">
+                    <Label>Web3 Task Type</Label>
+                    <Controller name="taskType" control={form.control} render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value || 'Smart Contract'}>
+                        <SelectTrigger><SelectValue placeholder="Select Web3 Type" /></SelectTrigger>
+                        <SelectContent>
+                          {WEB3_TASK_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )} />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Controller name="category" control={form.control} render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          {categoryOptions.filter(c => c !== 'Web3').map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )} />
+                    {form.formState.errors.category && <p className="text-xs text-red-600">{form.formState.errors.category.message}</p>}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Rank Required</Label>
+                  <Controller name="rankRequired" control={form.control} render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="None" /></SelectTrigger><SelectContent><SelectItem value="Ronin">Ronin</SelectItem><SelectItem value="Kenshi">Kenshi</SelectItem><SelectItem value="Samurai">Samurai</SelectItem><SelectItem value="Shogun">Shogun</SelectItem></SelectContent></Select>
+                  )} />
                 </div>
               </div>
 
@@ -197,15 +266,6 @@ export default function AdminTasksPage() {
                 <div className="space-y-2">
                   <Label>Bonus Points</Label><Input type="number" {...form.register('bonusPoints')} />
                   {form.formState.errors.bonusPoints && <p className="text-xs text-red-600">{form.formState.errors.bonusPoints.message}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label>Rank Required</Label>
-                  <Controller name="rankRequired" control={form.control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="None" /></SelectTrigger><SelectContent><SelectItem value="Ronin">Ronin</SelectItem><SelectItem value="Kenshi">Kenshi</SelectItem><SelectItem value="Samurai">Samurai</SelectItem><SelectItem value="Shogun">Shogun</SelectItem></SelectContent></Select>
-                  )} />
                 </div>
               </div>
 
@@ -327,11 +387,24 @@ export default function AdminTasksPage() {
       ) : (
         <div className="border border-borders rounded-lg overflow-hidden">
           <Table>
-            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Status</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Track</TableHead><TableHead>Difficulty</TableHead><TableHead>Points</TableHead><TableHead>Status</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {tasks.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell><Link href={`/admin/tasks/${t.id}`} className="text-sm font-medium text-primary-text hover:text-japan-red">{t.title}</Link></TableCell>
+                  <TableCell>
+                    {t.track === 'web3' ? (
+                      <Badge className="bg-secondary-bg text-secondary-text border border-borders font-sans font-medium text-[11px] flex items-center gap-1.5 w-fit shadow-xs">
+                        <GitBranch className="w-3 h-3 text-japan-red" />
+                        Web3{t.taskType ? ` • ${t.taskType}` : ''}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-secondary-text bg-white border-borders font-sans font-medium text-[11px] flex items-center gap-1.5 w-fit">
+                        <GitBranch className="w-3 h-3 text-muted-text" />
+                        Main Line
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell><Badge variant="outline" className={diffColors[t.difficulty]}>{t.difficulty}</Badge></TableCell>
                   <TableCell className="font-semibold text-japan-red">{t.points}</TableCell>
                   <TableCell>

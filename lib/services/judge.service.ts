@@ -1,4 +1,4 @@
-import { eq, and, gt, asc, desc, count, sql, ilike, inArray } from "drizzle-orm";
+import { eq, ne, and, or, gt, asc, desc, count, sql, ilike, inArray } from "drizzle-orm";
 import { db } from "../db/client";
 import { users, submissions, reviews } from "../db/schema";
 import { env } from "../config/env";
@@ -8,7 +8,7 @@ import { NOTIFICATION_TYPES } from "../utils/constants";
 import type { SubmitReviewInput, EditReviewInput } from "../validators/judge.validator";
 import { checkAndPromoteUser, syncUserScore, syncTeamScore } from "./user.service";
 import { createNotification } from "./notification.service";
-import type { ReviewCriterion } from "@/types/api.types";
+import type { ReviewCriterion, PreviousJudgedSubmission, SubmissionStatus } from "@/types/api.types";
 
 const criteriaMap: Record<string, { name: string; maxScore: number }> = {
   codeQuality: { name: "Code Quality", maxScore: 25 },
@@ -60,6 +60,64 @@ export function enrichReviewWithScores<T extends Record<string, unknown>>(
     ...review,
     scores,
   };
+}
+
+export async function getPreviousJudgedSubmissions(
+  submissionId: string,
+  userId: string,
+  teamId?: string | null,
+  currentTaskId?: string
+): Promise<PreviousJudgedSubmission[]> {
+  const conditions = [
+    ne(submissions.id, submissionId),
+    teamId
+      ? or(eq(submissions.userId, userId), eq(submissions.teamId, teamId))!
+      : eq(submissions.userId, userId),
+    or(eq(submissions.status, "approved"), eq(submissions.status, "rejected"))!,
+  ];
+
+  const pastSubmissions = await db.query.submissions.findMany({
+    where: and(...conditions),
+    with: {
+      task: true,
+      assignedJudge: {
+        columns: { id: true, username: true, fullName: true, avatarUrl: true },
+      },
+      review: {
+        with: {
+          judge: {
+            columns: { id: true, username: true, fullName: true, avatarUrl: true },
+          },
+        },
+      },
+    },
+    orderBy: [desc(submissions.submittedAt)],
+  });
+
+  return pastSubmissions.map((s) => {
+    const enrichedReview = enrichReviewWithScores(s.review, (s.task?.criteria as ReviewCriterion[] | undefined));
+    const judge = s.review?.judge || s.assignedJudge;
+    return {
+      id: s.id,
+      taskId: s.taskId,
+      taskTitle: s.task?.title || "Untitled Task",
+      category: s.task?.category || null,
+      difficulty: s.task?.difficulty || null,
+      points: s.task?.points ?? 0,
+      isSameTask: currentTaskId ? s.taskId === currentTaskId : false,
+      repoUrl: s.repoUrl,
+      repoName: s.repoName,
+      status: s.status as SubmissionStatus,
+      submittedAt: s.submittedAt ? s.submittedAt.toISOString() : new Date().toISOString(),
+      judgeId: judge?.id ?? null,
+      judgeName: judge?.fullName || judge?.username || "Assigned Judge",
+      judgeAvatar: judge?.avatarUrl ?? null,
+      totalScore: s.review?.totalScore ?? null,
+      feedback: s.review?.feedback ?? null,
+      reviewedAt: s.review?.reviewedAt ? s.review.reviewedAt.toISOString() : null,
+      scores: enrichedReview?.scores ?? [],
+    };
+  });
 }
 
 // ──────────────────────────────────────────────
@@ -216,6 +274,13 @@ export async function getSubmissionForReview(judgeId: string, submissionId: stri
     throw forbidden("This submission is not assigned to you");
   }
 
+  const previousJudgedSubmissions = await getPreviousJudgedSubmissions(
+    submission.id,
+    submission.userId,
+    submission.teamId,
+    submission.taskId
+  );
+
   return {
     id: submission.id,
     taskId: submission.taskId,
@@ -233,6 +298,7 @@ export async function getSubmissionForReview(judgeId: string, submissionId: stri
     review: enrichReviewWithScores(submission.review, (submission.task?.criteria as ReviewCriterion[] | undefined)),
     task: submission.task,
     user: submission.user,
+    previousJudgedSubmissions,
   };
 }
 
@@ -454,8 +520,14 @@ export async function getReviews(judgeId: string, cursor?: string, limit = 20, s
   return {
     items: items.map((r) => {
       const enriched = enrichReviewWithScores(r)!;
-      const subUser = (r as any).submission?.user;
-      const subTask = (r as any).submission?.task;
+      const reviewWithSub = r as typeof r & {
+        submission?: {
+          user?: { email?: string | null; fullName?: string | null; username?: string | null };
+          task?: { title?: string | null };
+        };
+      };
+      const subUser = reviewWithSub.submission?.user;
+      const subTask = reviewWithSub.submission?.task;
       return {
         ...enriched,
         userEmail: subUser?.email ?? null,

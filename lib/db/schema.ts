@@ -33,6 +33,20 @@ export const SUBMISSION_STATUSES = [
 ] as const;
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
+export const TRACKS = ["main", "web3"] as const;
+export type Track = (typeof TRACKS)[number];
+
+export const WEB3_TASK_TYPES = [
+  "Smart Contract",
+  "dApp Frontend",
+  "DeFi Protocol",
+  "Security & Auditing",
+  "Solana & Rust",
+  "NFT & Digital Assets",
+  "Zero Knowledge",
+] as const;
+export type Web3TaskType = (typeof WEB3_TASK_TYPES)[number];
+
 export const TASK_CATEGORIES = [
   "Frontend",
   "Backend",
@@ -42,6 +56,7 @@ export const TASK_CATEGORIES = [
   "AI/ML",
   "DevOps",
   "Documentation",
+  "Web3",
 ] as const;
 export type TaskCategory = (typeof TASK_CATEGORIES)[number];
 
@@ -118,6 +133,8 @@ export const tasks = pgTable(
     title: text("title").notNull(),
     shortDescription: text("short_description").notNull().default(""),
     description: text("description").notNull(),
+    track: text("track", { enum: TRACKS }).notNull().default("main"),
+    taskType: text("task_type"),
     category: text("category", { enum: TASK_CATEGORIES }).notNull(),
     difficulty: text("difficulty", { enum: DIFFICULTIES }).notNull(),
     rankRequired: text("rank_required", { enum: RANKS })
@@ -139,6 +156,7 @@ export const tasks = pgTable(
       .defaultNow(),
   },
   (table) => [
+    index("tasks_track_idx").on(table.track),
     index("tasks_category_idx").on(table.category),
     index("tasks_difficulty_idx").on(table.difficulty),
     index("tasks_rank_required_idx").on(table.rankRequired),

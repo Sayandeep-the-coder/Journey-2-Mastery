@@ -3,6 +3,20 @@ export type Role = 'user' | 'judge' | 'admin';
 export type Rank = 'Ronin' | 'Kenshi' | 'Samurai' | 'Shogun' | 'Team';
 export type SubmissionStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export const TRACKS = ['main', 'web3'] as const;
+export type Track = (typeof TRACKS)[number];
+
+export const WEB3_TASK_TYPES = [
+  'Smart Contract',
+  'dApp Frontend',
+  'DeFi Protocol',
+  'Security & Auditing',
+  'Solana & Rust',
+  'NFT & Digital Assets',
+  'Zero Knowledge',
+] as const;
+export type Web3TaskType = (typeof WEB3_TASK_TYPES)[number];
+
 export const TASK_CATEGORIES = [
   'Frontend',
   'Backend',
@@ -12,6 +26,7 @@ export const TASK_CATEGORIES = [
   'AI/ML',
   'DevOps',
   'Documentation',
+  'Web3',
 ] as const;
 export type TaskCategory = (typeof TASK_CATEGORIES)[number];
 
@@ -76,6 +91,8 @@ export interface Task {
   shortDescription?: string;
   description: string;
   requirements?: string;
+  track?: Track | string;
+  taskType?: Web3TaskType | string | null;
   category: TaskCategory | string;
   categoryName?: string;
   points: number;
@@ -99,6 +116,27 @@ export interface Category {
 }
 
 // ─── Submissions ───
+export interface PreviousJudgedSubmission {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  category?: string | null;
+  difficulty?: string | null;
+  points?: number;
+  isSameTask: boolean;
+  repoUrl: string;
+  repoName?: string;
+  status: SubmissionStatus;
+  submittedAt: string;
+  judgeId?: string | null;
+  judgeName?: string;
+  judgeAvatar?: string | null;
+  totalScore?: number | null;
+  feedback?: string | null;
+  reviewedAt?: string | null;
+  scores?: CriterionScore[];
+}
+
 export interface Submission {
   id: string;
   taskId: string;
@@ -114,9 +152,12 @@ export interface Submission {
   feedback?: string;
   judgeId?: string;
   judgeName?: string;
+  assignedJudgeId?: string;
+  autoAssigned?: boolean;
   submittedAt: string;
   reviewedAt?: string;
   review?: Review;
+  previousJudgedSubmissions?: PreviousJudgedSubmission[];
 }
 
 // ─── Reviews ───
@@ -269,6 +310,7 @@ export interface JudgeWorkload {
   completedCount: number;
   loadScore: number;
   avgTurnaroundHours: number;
+  pendingCount?: number;
 }
 
 export interface AdminDashboardData {

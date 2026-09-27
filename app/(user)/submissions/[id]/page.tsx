@@ -7,6 +7,7 @@ import ErrorState from '@/components/shared/ErrorState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import CommentThread from '@/components/shared/CommentThread';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import PreviousJudgedSection from '@/components/submission/PreviousJudgedSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -63,34 +64,51 @@ export default function SubmissionDetailPage() {
 
       {/* Score Breakdown */}
       {submission.review && (
-        <Card>
+        <Card className="border-japan-red/30 shadow-xs">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-japan-red" />
-              Review — {submission.review.totalScore} points
-            </CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 font-serif text-lg">
+                <Star className="h-5 w-5 text-japan-red fill-japan-red" />
+                Trial Evaluation — {submission.review.totalScore} points
+              </CardTitle>
+              {submission.judgeName && (
+                <span className="text-xs text-secondary-text">
+                  Evaluated by <strong className="text-primary-text">{submission.judgeName}</strong>
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {submission.review.scores.map((s) => (
                 <div key={s.criterionId} className="flex items-center justify-between">
-                  <span className="text-sm text-secondary-text">{s.criterionName}</span>
-                  <span className="text-sm font-medium">{s.score} / {s.maxScore}</span>
+                  <span className="text-sm text-secondary-text font-medium">{s.criterionName}</span>
+                  <span className="font-semibold text-primary-text bg-secondary-bg/60 px-2.5 py-0.5 rounded border border-borders text-xs">
+                    {s.score} / {s.maxScore}
+                  </span>
                 </div>
               ))}
             </div>
             {submission.review.feedback && (
               <>
                 <Separator className="my-4" />
-                <div>
-                  <p className="text-sm font-medium text-primary-text mb-1">Feedback</p>
-                  <p className="text-sm text-secondary-text whitespace-pre-wrap">{submission.review.feedback}</p>
+                <div className="p-3.5 rounded-lg bg-[#FAF7F2] border-l-4 border-l-japan-red border border-borders/70">
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary-text mb-1">Judge Feedback</p>
+                  <p className="text-xs text-secondary-text whitespace-pre-wrap leading-relaxed">{submission.review.feedback}</p>
                 </div>
               </>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Previous Judged Tasks for this User / Team */}
+      <PreviousJudgedSection
+        submissions={submission.previousJudgedSubmissions}
+        currentTaskId={submission.taskId}
+        title="Your Previous Judged Tasks"
+        subtitle="Review your trial history, criteria scores, and feedback from past evaluations"
+      />
 
       {/* Actions */}
       {submission.status === 'pending' && (

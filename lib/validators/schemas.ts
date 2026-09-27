@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TASK_CATEGORIES } from '../db/schema';
+import { TASK_CATEGORIES, TRACKS } from '../db/schema';
 
 // ─── Profile Completion ───
 export const completeProfileSchema = z.object({
@@ -41,6 +41,8 @@ export const taskSchema = z.object({
   shortDescription: z.string().min(5, 'Short description is required').max(500),
   description: z.string().min(10, 'Task details must be at least 10 characters'),
   requirements: z.string().optional(),
+  track: z.enum(TRACKS).default('main'),
+  taskType: z.string().optional(),
   category: z.enum(TASK_CATEGORIES, { errorMap: () => ({ message: 'Category is required' }) }),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   points: z.coerce.number().min(1, 'Points must be at least 1').max(1000),

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAdminSubmissions, useAssignJudge, useAdminJudges } from '@/hooks/queries/useAdminDashboard';
+import { useAdminSubmissions, useAdminJudges } from '@/hooks/queries/useAdminDashboard';
 import { useDebounce } from '@/hooks/useDebounce';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
@@ -11,9 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Search } from 'lucide-react';
+import { UserPlus, Search, RefreshCw } from 'lucide-react';
+import AssignJudgeDialog from '@/components/admin/AssignJudgeDialog';
 import Link from 'next/link';
-import { toast } from 'sonner';
 
 export default function AdminSubmissionsPage() {
   const [status, setStatus] = useState('');
@@ -27,7 +27,6 @@ export default function AdminSubmissionsPage() {
     search: debouncedSearch || undefined
   });
   const { data: judges } = useAdminJudges();
-  const assignJudge = useAssignJudge();
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
@@ -42,7 +41,7 @@ export default function AdminSubmissionsPage() {
       </div>
 
       <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-50">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-text" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by email or username..." className="pl-9" />
         </div>
@@ -83,10 +82,35 @@ export default function AdminSubmissionsPage() {
                   <TableCell className="text-sm text-secondary-text">{s.userName || 'Unknown'}</TableCell>
                   <TableCell><StatusBadge status={s.status} /></TableCell>
                   <TableCell className="text-sm text-muted-text">
-                    {s.judgeName || (
-                      <Button variant="outline" size="sm" onClick={() => assignJudge.mutate({ submissionId: s.id }, { onSuccess: () => { toast.success('Judge assigned'); refetch(); } })}>
-                        <UserPlus className="h-3 w-3 mr-1" />Assign
-                      </Button>
+                    {s.judgeName ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate max-w-30 font-medium text-primary-text">{s.judgeName}</span>
+                        <AssignJudgeDialog
+                          submissionId={s.id}
+                          submissionAuthorId={s.userId}
+                          currentJudgeId={s.assignedJudgeId}
+                          currentJudgeName={s.judgeName}
+                          onSuccess={refetch}
+                          trigger={
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-text hover:text-japan-red" title="Reassign Judge">
+                              <RefreshCw className="h-3 w-3" />
+                            </Button>
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <AssignJudgeDialog
+                        submissionId={s.id}
+                        submissionAuthorId={s.userId}
+                        currentJudgeId={s.assignedJudgeId}
+                        currentJudgeName={s.judgeName}
+                        onSuccess={refetch}
+                        trigger={
+                          <Button variant="outline" size="sm" className="h-7 text-xs">
+                            <UserPlus className="h-3 w-3 mr-1" />Assign
+                          </Button>
+                        }
+                      />
                     )}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-japan-red">{s.score ?? '—'}</TableCell>
