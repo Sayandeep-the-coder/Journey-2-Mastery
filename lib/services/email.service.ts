@@ -60,14 +60,29 @@ function getFromAddress(): string {
 // Core Email Dispatch
 // ──────────────────────────────────────────────
 
+export interface EmailAttachment {
+  filename?: string | false;
+  content?: string | Buffer;
+  path?: string;
+  contentType?: string;
+  cid?: string;
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<{ success: boolean; simulated?: boolean; messageId?: string }> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  attachments,
+}: SendEmailOptions): Promise<{ success: boolean; simulated?: boolean; messageId?: string }> {
   const mailer = getTransporter();
 
   if (!mailer) {
@@ -85,15 +100,37 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
       subject,
       html,
       text: text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+      attachments,
     });
 
     logger.info({ messageId: info.messageId, to, subject }, "[EmailService] Email sent successfully");
     return { success: true, messageId: info.messageId };
   } catch (error) {
+    // If sending with attachments failed (e.g. remote asset download error), fallback to sending without attachments
+    if (attachments && attachments.length > 0) {
+      try {
+        const info = await mailer.sendMail({
+          from: getFromAddress(),
+          to,
+          subject,
+          html,
+          text: text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+        });
+        logger.info(
+          { messageId: info.messageId, to, subject },
+          "[EmailService] Email sent successfully on fallback (without attachments)"
+        );
+        return { success: true, messageId: info.messageId };
+      } catch (fallbackError) {
+        logger.error({ error: fallbackError, to, subject }, "[EmailService] Failed to send fallback email");
+        throw fallbackError;
+      }
+    }
     logger.error({ error, to, subject }, "[EmailService] Failed to send email");
     throw error;
   }
 }
+
 
 // ──────────────────────────────────────────────
 // Participant Retrieval
@@ -441,3 +478,337 @@ function wrapWithEmailBoilerplate(content: string, title: string): string {
 </html>
   `.trim();
 }
+
+// ──────────────────────────────────────────────
+// Judge Review / Rank Promotion Emails
+// ──────────────────────────────────────────────
+
+export const KENSHI_IMAGE_URL =
+  "https://res.cloudinary.com/dkxskaege/image/upload/v1790538583/ChatGPT_Image_Sep_28_2026_01_19_26_AM_yceuhr.png";
+
+export const RONIN_IMAGE_URL =
+  "https://res.cloudinary.com/dkxskaege/image/upload/v1789626509/Ronin_n4pov3.png";
+
+export interface ReviewScoreItem {
+  criterionName: string;
+  score: number;
+  maxScore: number;
+}
+
+export interface KenshiPromotionEmailOptions {
+  user: {
+    email: string;
+    fullName?: string | null;
+    username: string;
+  };
+  taskTitle: string;
+  totalScore: number;
+  passingScore?: number;
+  feedback?: string | null;
+  scores?: ReviewScoreItem[];
+  submissionId?: string;
+}
+
+export async function sendKenshiPromotionEmail({
+  user,
+  taskTitle,
+  totalScore,
+  feedback,
+  scores,
+  submissionId,
+}: KenshiPromotionEmailOptions) {
+  const siteUrl = env.FRONTEND_URL.replace(/\/$/, "");
+  const displayName = user.fullName || user.username || "Warrior";
+  const targetUrl = submissionId
+    ? `${siteUrl}/submissions/${submissionId}`
+    : `${siteUrl}/dashboard`;
+
+  const subject = "⚔️ Rank Promoted: You are now a Kenshi! — Journey to Mastery";
+
+  const scoresRows =
+    scores && scores.length > 0
+      ? scores
+          .map(
+            (s) => `
+        <tr style="border-bottom: 1px solid #27272a;">
+          <td style="padding: 10px 14px; color: #d4d4d8; font-size: 14px;">${s.criterionName}</td>
+          <td style="padding: 10px 14px; color: #ffffff; font-weight: 700; text-align: right; font-size: 14px;">
+            ${s.score} <span style="color: #71717a; font-weight: 400; font-size: 12px;">/ ${s.maxScore}</span>
+          </td>
+        </tr>`
+          )
+          .join("")
+      : "";
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rank Promoted to Kenshi</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0c0a09; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f4f4f5; }
+    .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
+    .card { background-color: #18181b; border: 1px solid #27272a; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .banner { width: 100%; max-height: 280px; object-fit: cover; display: block; border-bottom: 2px solid #BC002D; }
+    .header { padding: 32px 30px 20px; text-align: center; }
+    .badge { display: inline-block; background: linear-gradient(135deg, #BC002D 0%, #dc2626 100%); color: #ffffff; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(188, 0, 45, 0.4); }
+    .title { margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; }
+    .content { padding: 0 30px 32px; line-height: 1.6; }
+    .greeting { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 14px; }
+    .lead { font-size: 15px; color: #d4d4d8; margin-bottom: 22px; }
+    .kenshi-box { background: linear-gradient(145deg, #1c1917 0%, #292524 100%); border-left: 4px solid #BC002D; border-radius: 8px; padding: 20px; margin: 24px 0; border: 1px solid #3f3f46; border-left-width: 4px; }
+    .kenshi-box-title { color: #facc15; font-size: 16px; font-weight: 800; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .kenshi-box-text { color: #e4e4e7; font-size: 14px; margin: 0; line-height: 1.6; }
+    .stats-card { background-color: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+    .stats-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #27272a; padding-bottom: 12px; margin-bottom: 14px; }
+    .stats-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #a1a1aa; margin: 0; }
+    .score-pill { background-color: #15803d; color: #ffffff; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 14px; }
+    .scores-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .feedback-box { background-color: #09090b; border: 1px solid #27272a; border-left: 3px solid #BC002D; border-radius: 6px; padding: 18px; margin: 20px 0; }
+    .feedback-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #BC002D; margin: 0 0 6px 0; }
+    .feedback-text { font-size: 14px; color: #e4e4e7; font-style: italic; margin: 0; white-space: pre-line; line-height: 1.5; }
+    .cta-container { text-align: center; margin: 32px 0 12px; }
+    .cta-btn { display: inline-block; background-color: #BC002D; color: #ffffff !important; padding: 14px 34px; border-radius: 8px; font-weight: 800; font-size: 15px; text-decoration: none; box-shadow: 0 6px 18px rgba(188, 0, 45, 0.45); }
+    .footer { text-align: center; padding: 24px; font-size: 12px; color: #71717a; border-top: 1px solid #27272a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="${KENSHI_IMAGE_URL}" alt="Promoted to Kenshi" class="banner" />
+      <div class="header">
+        <div class="badge">⚔️ Rank Ascension · Approved</div>
+        <h1 class="title">You are Promoted to Kenshi!</h1>
+      </div>
+      <div class="content">
+        <div class="greeting">Salute, Warrior ${displayName}! 🥋</div>
+        <p class="lead">
+          Honorable news! The judges have reviewed your submission for <strong>${taskTitle}</strong> and marked it as <strong style="color: #22c55e;">APPROVED</strong>.
+        </p>
+
+        <div class="kenshi-box">
+          <div class="kenshi-box-title">⚔️ Your Kenshi Journey Starts Now</div>
+          <p class="kenshi-box-text">
+            By proving your discipline and skill in the trials of Ronin, you have officially ascended to the rank of <strong>KENSHI (剣士)</strong>!
+            Your Kenshi journey officially begins now. As a Kenshi, the trials ahead will demand deeper precision, sharper logic, and higher architecture standards. Prepare yourself for the upcoming <strong>Week 2 challenges</strong>, where you will face tougher opponents and forge higher-level solutions.
+          </p>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-header">
+            <span class="stats-title">Task Evaluation</span>
+            <span class="score-pill">${totalScore} Marks Awarded</span>
+          </div>
+          <div style="font-size: 14px; color: #a1a1aa; margin-bottom: 12px;">
+            Task: <strong style="color: #ffffff;">${taskTitle}</strong> &bull; Status: <strong style="color: #22c55e;">Approved</strong>
+          </div>
+          ${
+            scoresRows
+              ? `<table class="scores-table"><tbody>${scoresRows}</tbody></table>`
+              : ""
+          }
+        </div>
+
+        ${
+          feedback
+            ? `<div class="feedback-box">
+                <div class="feedback-title">Judge Feedback</div>
+                <div class="feedback-text">&ldquo;${feedback}&rdquo;</div>
+              </div>`
+            : ""
+        }
+
+        <div class="cta-container">
+          <a href="${targetUrl}" class="cta-btn">Enter the Dojo as a Kenshi &rarr;</a>
+        </div>
+      </div>
+      <div class="footer">
+        <p>Journey to Mastery · Kalyani Government Engineering College</p>
+        <p>You received this email because your submission was evaluated by a judge on the portal.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return sendEmail({
+    to: user.email,
+    subject,
+    html,
+    attachments: [
+      {
+        filename: "kenshi-promotion.png",
+        path: KENSHI_IMAGE_URL,
+      },
+    ],
+  });
+}
+
+export interface RoninRemainingEmailOptions {
+  user: {
+    email: string;
+    fullName?: string | null;
+    username: string;
+  };
+  taskTitle: string;
+  totalScore: number;
+  passingScore?: number;
+  feedback?: string | null;
+  scores?: ReviewScoreItem[];
+  submissionId?: string;
+  taskId?: string;
+}
+
+export async function sendRoninRemainingEmail({
+  user,
+  taskTitle,
+  totalScore,
+  passingScore = 50,
+  feedback,
+  scores,
+  submissionId,
+  taskId,
+}: RoninRemainingEmailOptions) {
+  const siteUrl = env.FRONTEND_URL.replace(/\/$/, "");
+  const displayName = user.fullName || user.username || "Warrior";
+  const targetUrl = submissionId
+    ? `${siteUrl}/submissions/${submissionId}`
+    : taskId
+      ? `${siteUrl}/tasks/${taskId}`
+      : `${siteUrl}/dashboard`;
+
+  const subject = "🗡️ Ronin Trials Update: Stand Tall, Warrior — Your Path to Week 2";
+
+  const scoresRows =
+    scores && scores.length > 0
+      ? scores
+          .map(
+            (s) => `
+        <tr style="border-bottom: 1px solid #27272a;">
+          <td style="padding: 10px 14px; color: #d4d4d8; font-size: 14px;">${s.criterionName}</td>
+          <td style="padding: 10px 14px; color: #ffffff; font-weight: 700; text-align: right; font-size: 14px;">
+            ${s.score} <span style="color: #71717a; font-weight: 400; font-size: 12px;">/ ${s.maxScore}</span>
+          </td>
+        </tr>`
+          )
+          .join("")
+      : "";
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ronin Trials Update</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0c0a09; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f4f4f5; }
+    .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
+    .card { background-color: #18181b; border: 1px solid #27272a; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 36px rgba(0,0,0,0.6); }
+    .banner { width: 100%; max-height: 280px; object-fit: cover; display: block; border-bottom: 2px solid #BC002D; }
+    .header { padding: 32px 30px 20px; text-align: center; }
+    .badge { display: inline-block; background-color: #3f3f46; color: #f4f4f5; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; border: 1px solid #52525b; }
+    .title { margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; }
+    .content { padding: 0 30px 32px; line-height: 1.6; }
+    .greeting { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 14px; }
+    .lead { font-size: 15px; color: #d4d4d8; margin-bottom: 22px; }
+    .motivation-box { background: linear-gradient(145deg, #18181b 0%, #27272a 100%); border-left: 4px solid #BC002D; border-radius: 8px; padding: 22px; margin: 24px 0; border: 1px solid #3f3f46; border-left-width: 4px; }
+    .motivation-title { color: #f87171; font-size: 16px; font-weight: 800; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    .motivation-quote { color: #ffffff; font-style: italic; font-weight: 600; margin: 0 0 12px 0; font-size: 14px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px; }
+    .strategy-intro { color: #e4e4e7; font-size: 14px; font-weight: 700; margin: 0 0 10px 0; }
+    .steps-list { margin: 0; padding-left: 20px; color: #d4d4d8; font-size: 14px; line-height: 1.7; }
+    .steps-list li { margin-bottom: 8px; }
+    .steps-list strong { color: #ffffff; }
+    .stats-card { background-color: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+    .stats-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #27272a; padding-bottom: 12px; margin-bottom: 14px; }
+    .stats-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #a1a1aa; margin: 0; }
+    .score-pill { background-color: #b91c1c; color: #ffffff; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 14px; }
+    .scores-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .feedback-box { background-color: #09090b; border: 1px solid #27272a; border-left: 3px solid #f87171; border-radius: 6px; padding: 18px; margin: 20px 0; }
+    .feedback-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #f87171; margin: 0 0 8px 0; }
+    .feedback-text { font-size: 14px; color: #e4e4e7; font-style: italic; margin: 0; white-space: pre-line; line-height: 1.5; }
+    .cta-container { text-align: center; margin: 32px 0 12px; }
+    .cta-btn { display: inline-block; background-color: #BC002D; color: #ffffff !important; padding: 14px 34px; border-radius: 8px; font-weight: 800; font-size: 15px; text-decoration: none; box-shadow: 0 6px 18px rgba(188, 0, 45, 0.45); }
+    .footer { text-align: center; padding: 24px; font-size: 12px; color: #71717a; border-top: 1px solid #27272a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="${RONIN_IMAGE_URL}" alt="Ronin Warrior" class="banner" />
+      <div class="header">
+        <div class="badge">🗡️ Ronin Trials · Review Completed</div>
+        <h1 class="title">Stand Tall, Warrior</h1>
+      </div>
+      <div class="content">
+        <div class="greeting">Greetings, Warrior ${displayName}! 🥋</div>
+        <p class="lead">
+          The judges have completed reviewing your submission for <strong>${taskTitle}</strong>.
+          Your solution received <strong>${totalScore} marks</strong> (passing threshold: ${passingScore} marks) and was not approved at this stage. You currently <strong>remain in the rank of Ronin</strong>.
+        </p>
+
+        <div class="motivation-box">
+          <div class="motivation-title">🔥 True Mastery is Forged in Resistance</div>
+          <div class="motivation-quote">&ldquo;A true warrior is not defined by stumbling, but by the relentless hunger to rise, sharpen their blade, and strike again.&rdquo;</div>
+          <div class="strategy-intro">Your Battle Plan for Week 2:</div>
+          <ol class="steps-list">
+            <li><strong>First, conquer your Ronin challenge:</strong> Study the judge's feedback below, resolve the issues, and refine your code to meet the standard.</li>
+            <li><strong>Earn your approval:</strong> Once your updated Ronin submission is approved, you will immediately ascend to the rank of <strong>Kenshi</strong>.</li>
+            <li><strong>Complete Kenshi challenge too in Week 2:</strong> Charge straight ahead to tackle the <strong>Week 2 Kenshi challenge</strong> side-by-side with your Ronin triumph and surge forward on the leaderboard!</li>
+          </ol>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-header">
+            <span class="stats-title">Evaluation Summary</span>
+            <span class="score-pill">${totalScore} Marks (Needs Revision)</span>
+          </div>
+          <div style="font-size: 14px; color: #a1a1aa; margin-bottom: 12px;">
+            Task: <strong style="color: #ffffff;">${taskTitle}</strong> &bull; Current Rank: <strong style="color: #fca5a5;">Ronin</strong>
+          </div>
+          ${
+            scoresRows
+              ? `<table class="scores-table"><tbody>${scoresRows}</tbody></table>`
+              : ""
+          }
+        </div>
+
+        ${
+          feedback
+            ? `<div class="feedback-box">
+                <div class="feedback-title">Judge Feedback & Suggestions</div>
+                <div class="feedback-text">&ldquo;${feedback}&rdquo;</div>
+              </div>`
+            : ""
+        }
+
+        <div class="cta-container">
+          <a href="${targetUrl}" class="cta-btn">Review Feedback &amp; Refine Code &rarr;</a>
+        </div>
+      </div>
+      <div class="footer">
+        <p>Journey to Mastery · Kalyani Government Engineering College</p>
+        <p>You received this email because your submission was evaluated by a judge on the portal.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return sendEmail({
+    to: user.email,
+    subject,
+    html,
+    attachments: [
+      {
+        filename: "ronin-quest.png",
+        path: RONIN_IMAGE_URL,
+      },
+    ],
+  });
+}
+

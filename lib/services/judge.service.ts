@@ -8,6 +8,8 @@ import { NOTIFICATION_TYPES } from "../utils/constants";
 import type { SubmitReviewInput, EditReviewInput } from "../validators/judge.validator";
 import { checkAndPromoteUser, syncUserScore, syncTeamScore } from "./user.service";
 import { createNotification } from "./notification.service";
+import { logger } from "../logger";
+import { sendKenshiPromotionEmail, sendRoninRemainingEmail, type ReviewScoreItem } from "./email.service";
 import type { ReviewCriterion, PreviousJudgedSubmission, SubmissionStatus } from "@/types/api.types";
 
 const criteriaMap: Record<string, { name: string; maxScore: number }> = {
@@ -314,7 +316,19 @@ export async function submitReview(
   // Verify submission is assigned to this judge
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
-    with: { task: true },
+    with: {
+      task: true,
+      user: {
+        columns: {
+          id: true,
+          username: true,
+          email: true,
+          fullName: true,
+          rank: true,
+          settings: true,
+        },
+      },
+    },
   });
 
   if (!submission) throw notFound("Submission", submissionId);
@@ -380,6 +394,15 @@ export async function submitReview(
   // Check and promote user if approved
   if (decision === "approved") {
     await checkAndPromoteUser(submission.userId, submission.taskId);
+    if (submission.teamId) {
+      const teamMates = await db.query.users.findMany({
+        where: and(eq(users.currentTeamId, submission.teamId), ne(users.id, submission.userId)),
+        columns: { id: true },
+      });
+      for (const mate of teamMates) {
+        await checkAndPromoteUser(mate.id, submission.taskId);
+      }
+    }
   }
 
   // Update user's or team's cached score
@@ -399,7 +422,135 @@ export async function submitReview(
     relatedEntityId: submissionId,
   });
 
-  return enrichReviewWithScores(review, (submission.task?.criteria as ReviewCriterion[] | undefined))!;
+  const enrichedReview = enrichReviewWithScores(
+    review,
+    submission.task?.criteria as ReviewCriterion[] | undefined
+  )!;
+
+  // Send Email Notification to Warrior(s)
+  await dispatchReviewEmails({
+    submission,
+    decision,
+    totalScore,
+    passingScore,
+    feedback: data.feedback,
+    scores: enrichedReview.scores,
+    submissionId,
+  });
+
+  return enrichedReview;
+}
+
+async function dispatchReviewEmails({
+  submission,
+  decision,
+  totalScore,
+  passingScore,
+  feedback,
+  scores,
+  submissionId,
+}: {
+  submission: {
+    userId: string;
+    teamId?: string | null;
+    taskId: string;
+    task?: { title?: string; criteria?: unknown } | null;
+    user?: {
+      id: string;
+      username: string;
+      email: string | null;
+      fullName?: string | null;
+      rank?: string | null;
+      settings?: unknown;
+    } | null;
+  };
+  decision: "approved" | "rejected";
+  totalScore: number;
+  passingScore: number;
+  feedback?: string | null;
+  scores?: ReviewScoreItem[];
+  submissionId: string;
+}) {
+  try {
+    const warriors = submission.teamId
+      ? await db.query.users.findMany({
+          where: eq(users.currentTeamId, submission.teamId),
+          columns: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            rank: true,
+            settings: true,
+          },
+        })
+      : submission.user
+        ? [submission.user]
+        : await db.query.users.findMany({
+            where: eq(users.id, submission.userId),
+            columns: {
+              id: true,
+              username: true,
+              email: true,
+              fullName: true,
+              rank: true,
+              settings: true,
+            },
+          });
+
+    const taskTitle = submission.task?.title || "Challenge Task";
+
+    for (const warrior of warriors) {
+      if (!warrior.email || !warrior.email.includes("@")) continue;
+
+      const userSettings = warrior.settings as {
+        emailNotifications?: boolean;
+        reviewNotifications?: boolean;
+      } | null;
+
+      if (userSettings?.emailNotifications === false || userSettings?.reviewNotifications === false) {
+        logger.info(
+          { userId: warrior.id },
+          "[JudgeService] Warrior opted out of review emails, skipping."
+        );
+        continue;
+      }
+
+      const recipientUser = {
+        email: warrior.email,
+        username: warrior.username,
+        fullName: warrior.fullName,
+      };
+
+      if (decision === "approved") {
+        await sendKenshiPromotionEmail({
+          user: recipientUser,
+          taskTitle,
+          totalScore,
+          passingScore,
+          feedback,
+          scores,
+          submissionId,
+        });
+      } else {
+        await sendRoninRemainingEmail({
+          user: recipientUser,
+          taskTitle,
+          totalScore,
+          passingScore,
+          feedback,
+          scores,
+          submissionId,
+          taskId: submission.taskId,
+        });
+      }
+    }
+  } catch (emailErr) {
+    logger.error(
+      { err: emailErr, submissionId },
+      "[JudgeService] Failed to send judge review email notification"
+    );
+  }
 }
 
 export async function editReview(
@@ -465,9 +616,35 @@ export async function editReview(
   const passingScore = review.submission?.task?.passingScore ?? 50;
   const decision = data.decision || (totalScore !== undefined ? (totalScore >= passingScore ? "approved" : "rejected") : undefined);
   if (decision && review.submission) {
+    const previousStatus = review.submission.status;
     await db.update(submissions).set({ status: decision }).where(eq(submissions.id, review.submissionId));
     if (decision === "approved") {
       await checkAndPromoteUser(review.submission.userId, review.submission.taskId);
+      if (review.submission.teamId) {
+        const teamMates = await db.query.users.findMany({
+          where: and(eq(users.currentTeamId, review.submission.teamId), ne(users.id, review.submission.userId)),
+          columns: { id: true },
+        });
+        for (const mate of teamMates) {
+          await checkAndPromoteUser(mate.id, review.submission.taskId);
+        }
+      }
+    }
+
+    if (decision !== previousStatus) {
+      const enriched = enrichReviewWithScores(
+        updated,
+        review.submission.task?.criteria as ReviewCriterion[] | undefined
+      );
+      await dispatchReviewEmails({
+        submission: review.submission,
+        decision,
+        totalScore: totalScore ?? updated.totalScore,
+        passingScore,
+        feedback: data.feedback ?? updated.feedback,
+        scores: enriched?.scores,
+        submissionId: review.submissionId,
+      });
     }
   }
 
