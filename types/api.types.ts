@@ -116,6 +116,27 @@ export interface Category {
 }
 
 // ─── Submissions ───
+export interface PreviousJudgedSubmission {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  category?: string | null;
+  difficulty?: string | null;
+  points?: number;
+  isSameTask: boolean;
+  repoUrl: string;
+  repoName?: string;
+  status: SubmissionStatus;
+  submittedAt: string;
+  judgeId?: string | null;
+  judgeName?: string;
+  judgeAvatar?: string | null;
+  totalScore?: number | null;
+  feedback?: string | null;
+  reviewedAt?: string | null;
+  scores?: CriterionScore[];
+}
+
 export interface Submission {
   id: string;
   taskId: string;
@@ -131,9 +152,12 @@ export interface Submission {
   feedback?: string;
   judgeId?: string;
   judgeName?: string;
+  assignedJudgeId?: string;
+  autoAssigned?: boolean;
   submittedAt: string;
   reviewedAt?: string;
   review?: Review;
+  previousJudgedSubmissions?: PreviousJudgedSubmission[];
 }
 
 // ─── Reviews ───
@@ -286,6 +310,7 @@ export interface JudgeWorkload {
   completedCount: number;
   loadScore: number;
   avgTurnaroundHours: number;
+  pendingCount?: number;
 }
 
 export interface AdminDashboardData {

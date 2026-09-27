@@ -14,10 +14,11 @@ import { reassignSubmission, computeJudgeLoadScore } from "./assignment.service"
 import { AUDIT_ACTIONS, NOTIFICATION_TYPES } from "../utils/constants";
 import { checkAndPromoteUser, syncUserScore, syncTeamScore } from "./user.service";
 import { env } from "../config/env";
-import { enrichReviewWithScores } from "./judge.service";
+import { enrichReviewWithScores, getPreviousJudgedSubmissions } from "./judge.service";
 import { createNotification } from "./notification.service";
 import { logger } from "../logger";
 import * as emailService from "./email.service";
+import type { ReviewCriterion } from "@/types/api.types";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -342,7 +343,7 @@ export async function deleteTask(adminId: string, taskId: string) {
 // ──────────────────────────────────────────────
 
 export async function getAllSubmissions(
-  filters: { status?: string; judgeId?: string; search?: string; cursor?: string; limit?: number } = {}
+  filters: { status?: string; judgeId?: string; search?: string; cursor?: string; limit?: number; userId?: string; taskId?: string } = {}
 ) {
   const limit = filters.limit ?? 20;
   const conditions = [];
@@ -350,6 +351,8 @@ export async function getAllSubmissions(
   if (filters.status)
     conditions.push(eq(submissions.status, filters.status as "pending" | "in_review" | "approved" | "rejected"));
   if (filters.judgeId) conditions.push(eq(submissions.assignedJudgeId, filters.judgeId));
+  if (filters.userId) conditions.push(eq(submissions.userId, filters.userId));
+  if (filters.taskId) conditions.push(eq(submissions.taskId, filters.taskId));
   if (filters.search) {
     conditions.push(
       inArray(
@@ -365,7 +368,7 @@ export async function getAllSubmissions(
     with: {
       task: { columns: { id: true, title: true, category: true } },
       user: { columns: { id: true, username: true } },
-      assignedJudge: { columns: { id: true, username: true } },
+      assignedJudge: { columns: { id: true, username: true, fullName: true } },
       review: true,
     },
     orderBy: [desc(submissions.submittedAt)],
@@ -386,7 +389,7 @@ export async function getAllSubmissions(
     repoName: s.repoName,
     status: s.status,
     assignedJudgeId: s.assignedJudgeId,
-    judgeName: s.assignedJudge?.username,
+    judgeName: s.assignedJudge?.fullName || s.assignedJudge?.username,
     autoAssigned: s.autoAssigned,
     submittedAt: s.submittedAt,
     score: s.review?.totalScore ?? null,
@@ -405,30 +408,51 @@ export async function getAllSubmissions(
 export async function getSubmissionById(submissionId: string) {
   const submission = await db.query.submissions.findFirst({
     where: eq(submissions.id, submissionId),
-    with: { task: true, user: true, assignedJudge: true, review: true },
+    with: { 
+      task: true, 
+      user: true, 
+      assignedJudge: true, 
+      review: {
+        with: {
+          judge: { columns: { id: true, username: true, fullName: true, avatarUrl: true } },
+        },
+      },
+    },
   });
 
   if (!submission) throw notFound("Submission", submissionId);
+
+  const previousJudgedSubmissions = await getPreviousJudgedSubmissions(
+    submission.id,
+    submission.userId,
+    submission.teamId,
+    submission.taskId
+  );
   
+  const judge = submission.review?.judge || submission.assignedJudge;
+
   return {
     id: submission.id,
     taskId: submission.taskId,
     taskTitle: submission.task?.title,
     userId: submission.userId,
     userName: submission.user?.username,
+    userEmail: submission.user?.email,
+    teamId: submission.teamId,
     repoId: submission.repoId,
     repoUrl: submission.repoUrl,
     repoName: submission.repoName,
     status: submission.status,
     assignedJudgeId: submission.assignedJudgeId,
-    judgeName: submission.assignedJudge?.username,
+    judgeName: judge?.fullName || judge?.username,
     autoAssigned: submission.autoAssigned,
     submittedAt: submission.submittedAt,
     score: submission.review?.totalScore ?? null,
-    review: enrichReviewWithScores(submission.review),
+    review: enrichReviewWithScores(submission.review, (submission.task?.criteria as ReviewCriterion[] | undefined)),
     task: submission.task,
     user: submission.user,
     assignedJudge: submission.assignedJudge,
+    previousJudgedSubmissions,
   };
 }
 
@@ -454,30 +478,96 @@ export async function manualAssign(
     throw badRequest("Cannot assign a judge to their own submission", "SELF_REVIEW");
   }
 
+  const isReassign = !!submission.assignedJudgeId && submission.assignedJudgeId !== data.judgeId;
+
   await db
     .update(submissions)
     .set({
       assignedJudgeId: data.judgeId,
       assignedAt: new Date(),
-      status: "in_review",
+      status: submission.status === "pending" ? "in_review" : submission.status,
       autoAssigned: false,
     })
     .where(eq(submissions.id, submissionId));
 
   await db.insert(auditLog).values({
     actorId: adminId,
-    action: AUDIT_ACTIONS.SUBMISSION_ASSIGNED,
+    action: isReassign ? AUDIT_ACTIONS.SUBMISSION_REASSIGNED : AUDIT_ACTIONS.SUBMISSION_ASSIGNED,
     targetType: "submission",
     targetId: submissionId,
-    metadata: { judgeId: data.judgeId },
+    metadata: { judgeId: data.judgeId, previousJudgeId: submission.assignedJudgeId },
   });
 
   await createNotification({
     userId: data.judgeId,
     type: NOTIFICATION_TYPES.SUBMISSION_ASSIGNED,
-    message: "You have been manually assigned a submission to review",
+    message: isReassign
+      ? "You have been reassigned a submission to review"
+      : "You have been manually assigned a submission to review",
     relatedEntityId: submissionId,
   });
+
+  return { assigned: true, judgeId: judge.id, judgeName: judge.fullName || judge.username };
+}
+
+export async function adminAutoAssign(adminId: string, submissionId: string) {
+  const submission = await db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+  });
+
+  if (!submission) throw notFound("Submission", submissionId);
+
+  const assigned = await reassignSubmission(submissionId);
+  if (!assigned) {
+    throw badRequest("No eligible judges available for auto-assignment at this time");
+  }
+
+  await db.insert(auditLog).values({
+    actorId: adminId,
+    action: AUDIT_ACTIONS.SUBMISSION_ASSIGNED,
+    targetType: "submission",
+    targetId: submissionId,
+    metadata: { method: "auto_assigned" },
+  });
+
+  const updated = await db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+    with: { assignedJudge: { columns: { id: true, username: true, fullName: true } } },
+  });
+
+  return {
+    assigned: true,
+    judgeId: updated?.assignedJudge?.id,
+    judgeName: updated?.assignedJudge?.fullName || updated?.assignedJudge?.username,
+  };
+}
+
+export async function unassignJudge(adminId: string, submissionId: string) {
+  const submission = await db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+  });
+
+  if (!submission) throw notFound("Submission", submissionId);
+
+  await db
+    .update(submissions)
+    .set({
+      assignedJudgeId: null,
+      assignedAt: null,
+      status: submission.status === "in_review" ? "pending" : submission.status,
+      autoAssigned: false,
+    })
+    .where(eq(submissions.id, submissionId));
+
+  await db.insert(auditLog).values({
+    actorId: adminId,
+    action: "submission.unassigned",
+    targetType: "submission",
+    targetId: submissionId,
+    metadata: { previousJudgeId: submission.assignedJudgeId },
+  });
+
+  return { unassigned: true };
 }
 
 export async function getUnassignedSubmissions(cursor?: string, limit = 20) {

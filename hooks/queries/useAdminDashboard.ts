@@ -232,13 +232,25 @@ export function useAdminSubmission(id: string) {
 export function useAssignJudge() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ submissionId, judgeId }: { submissionId: string; judgeId?: string }) =>
+    mutationFn: ({
+      submissionId,
+      judgeId,
+      auto,
+      unassign,
+    }: {
+      submissionId: string;
+      judgeId?: string;
+      auto?: boolean;
+      unassign?: boolean;
+    }) =>
       apiFetch(`/admin/submissions/${submissionId}/assign`, {
         method: 'POST',
-        body: JSON.stringify({ judgeId }),
+        body: JSON.stringify({ judgeId, auto, unassign }),
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'submissions', variables.submissionId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'assignment'] });
     },
   });
 }

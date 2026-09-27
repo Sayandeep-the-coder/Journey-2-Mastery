@@ -1,18 +1,17 @@
 'use client';
 
-import { useUnassignedSubmissions, useReassignSubmission } from '@/hooks/queries/useAdminDashboard';
+import { useUnassignedSubmissions } from '@/hooks/queries/useAdminDashboard';
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton';
 import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserPlus } from 'lucide-react';
+import AssignJudgeDialog from '@/components/admin/AssignJudgeDialog';
 import Link from 'next/link';
-import { toast } from 'sonner';
 
 export default function AdminUnassignedPage() {
   const { data: submissions, isLoading, isError, error, refetch } = useUnassignedSubmissions();
-  const reassign = useReassignSubmission();
 
   if (isLoading) return <LoadingSkeleton variant="table" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
@@ -37,9 +36,18 @@ export default function AdminUnassignedPage() {
                   <TableCell className="text-sm text-secondary-text">{s.userName || 'Unknown'}</TableCell>
                   <TableCell className="text-sm text-muted-text">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" onClick={() => reassign.mutate({ submissionId: s.id }, { onSuccess: () => { toast.success('Judge assigned'); refetch(); } })} disabled={reassign.isPending}>
-                      <UserPlus className="h-3 w-3 mr-1" />Assign
-                    </Button>
+                    <AssignJudgeDialog
+                      submissionId={s.id}
+                      submissionAuthorId={s.userId}
+                      currentJudgeId={s.assignedJudgeId}
+                      currentJudgeName={null}
+                      onSuccess={refetch}
+                      trigger={
+                        <Button size="sm" className="h-8 text-xs gap-1">
+                          <UserPlus className="h-3.5 w-3.5" />Assign Judge
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ))}

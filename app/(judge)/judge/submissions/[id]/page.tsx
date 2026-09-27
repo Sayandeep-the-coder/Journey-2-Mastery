@@ -7,6 +7,7 @@ import ErrorState from '@/components/shared/ErrorState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import CommentThread from '@/components/shared/CommentThread';
 import ScoreRubricForm from '@/components/judge/ScoreRubricForm';
+import PreviousJudgedSection from '@/components/submission/PreviousJudgedSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, ExternalLink, User } from 'lucide-react';
@@ -108,6 +109,14 @@ export default function JudgeSubmissionDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Previous Judged Projects by this user / team */}
+      <PreviousJudgedSection
+        submissions={submission.previousJudgedSubmissions}
+        currentTaskId={submission.taskId}
+        title="Student's Previous Judged Projects"
+        subtitle="Review their past performance, score history, and prior judge feedback"
+      />
 
       <Separator />
       <CommentThread submissionId={id} />
