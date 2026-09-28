@@ -19,12 +19,26 @@ WITH all_entities AS (
     t.name AS username,
     t.name AS full_name,
     NULL::text AS avatar_url,
-    CASE
-      WHEN t.score >= 300 THEN 'Shogun'
-      WHEN t.score >= 200 THEN 'Samurai'
-      WHEN t.score >= 100 THEN 'Kenshi'
-      ELSE 'Ronin'
-    END AS rank,
+    COALESCE(
+      (
+        SELECT u.rank 
+        FROM users u 
+        WHERE u.current_team_id = t.id 
+        ORDER BY CASE u.rank 
+          WHEN 'Shogun' THEN 4 
+          WHEN 'Samurai' THEN 3 
+          WHEN 'Kenshi' THEN 2 
+          ELSE 1 
+        END DESC 
+        LIMIT 1
+      ),
+      CASE
+        WHEN t.score >= 300 THEN 'Shogun'
+        WHEN t.score >= 200 THEN 'Samurai'
+        WHEN t.score >= 100 THEN 'Kenshi'
+        ELSE 'Ronin'
+      END
+    ) AS rank,
     t.score AS total_score,
     COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.id END)::int AS tasks_completed,
     'team' AS entity_type
@@ -40,19 +54,22 @@ WITH all_entities AS (
     u.username AS username,
     COALESCE(u.full_name, u.username) AS full_name,
     u.avatar_url AS avatar_url,
-    CASE
-      WHEN u.score >= 300 THEN 'Shogun'
-      WHEN u.score >= 200 THEN 'Samurai'
-      WHEN u.score >= 100 THEN 'Kenshi'
-      ELSE 'Ronin'
-    END AS rank,
+    COALESCE(
+      u.rank,
+      CASE
+        WHEN u.score >= 300 THEN 'Shogun'
+        WHEN u.score >= 200 THEN 'Samurai'
+        WHEN u.score >= 100 THEN 'Kenshi'
+        ELSE 'Ronin'
+      END
+    ) AS rank,
     u.score AS total_score,
     COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.id END)::int AS tasks_completed,
     'solo' AS entity_type
   FROM users u
   LEFT JOIN submissions s ON s.user_id = u.id AND s.status = 'approved'
   WHERE u.role = 'user' AND u.current_team_id IS NULL
-  GROUP BY u.id, u.username, u.full_name, u.avatar_url, u.score
+  GROUP BY u.id, u.username, u.full_name, u.avatar_url, u.score, u.rank
 )
 SELECT
   user_id,

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { redis } from "../config/redis";
-import { CACHE_KEYS } from "../utils/constants";
+import { CACHE_KEYS, RANK_ORDER } from "../utils/constants";
 import { logger } from "../logger";
 
 import { desc, inArray, eq } from "drizzle-orm";
@@ -188,6 +188,10 @@ export async function getLeaderboard(
           discord: m.discord,
         }));
         const count = members.length;
+        const memberRanks = members.map((m) => m.rank);
+        const highestTeamRank = RANK_ORDER.reduce((highest, current) => {
+          return memberRanks.includes(current) ? current : highest;
+        }, pureRank);
 
         return {
           rank: Number(row.leaderboard_rank),
@@ -196,7 +200,7 @@ export async function getLeaderboard(
           avatarUrl: row.avatar_url as string | null,
           score,
           tasksCompleted: Number(row.tasks_completed || 0),
-          userRank: pureRank,
+          userRank: highestTeamRank,
           teamType: resolveTeamType(count),
           teamName: (row.username as string) || team?.name || null,
           teamId: row.user_id as string,

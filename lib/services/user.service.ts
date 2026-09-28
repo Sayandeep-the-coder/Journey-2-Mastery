@@ -94,10 +94,21 @@ export async function getDashboard(userId: string) {
       totalScore = Number(team.score ?? 0);
       leaderboardRank = teamRank;
 
-      if (totalScore >= 300) effectiveRank = 'Shogun';
-      else if (totalScore >= 200) effectiveRank = 'Samurai';
-      else if (totalScore >= 100) effectiveRank = 'Kenshi';
-      else effectiveRank = 'Ronin';
+      // Determine clan martial rank:
+      // 1. Check the highest earned rank among clan members (or user's rank)
+      const memberRanks = clanMembers.map((m) => m.rank as Rank);
+      const highestMemberRank = RANK_ORDER.reduce((highest, current) => {
+        return memberRanks.includes(current) ? current : highest;
+      }, (user.rank as Rank) || 'Ronin');
+
+      // 2. Also check if score warrants a higher rank
+      let scoreRank: Rank = 'Ronin';
+      if (totalScore >= 300) scoreRank = 'Shogun';
+      else if (totalScore >= 200) scoreRank = 'Samurai';
+      else if (totalScore >= 100) scoreRank = 'Kenshi';
+
+      // Clan rank is whichever is higher: task milestone rank or score rank (never demote earned rank)
+      effectiveRank = isRankSufficient(highestMemberRank, scoreRank) ? highestMemberRank : scoreRank;
 
       const membersWithGithub = clanMembers.map((m) => ({
         ...m,
@@ -785,7 +796,7 @@ function getAvailableRanks(userRank: string): Rank[] {
 export async function checkAndPromoteUser(userId: string, taskId: string): Promise<void> {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { rank: true },
+    columns: { rank: true, currentTeamId: true },
   });
 
   const task = await db.query.tasks.findFirst({
@@ -803,19 +814,42 @@ export async function checkAndPromoteUser(userId: string, taskId: string): Promi
     const currentIdx = RANK_ORDER.indexOf(currentRank);
     if (currentIdx !== -1 && currentIdx < RANK_ORDER.length - 1) {
       const nextRank = RANK_ORDER[currentIdx + 1]!;
-      await db
-        .update(users)
-        .set({ rank: nextRank })
-        .where(eq(users.id, userId));
 
-      logger.info({ userId, oldRank: currentRank, newRank: nextRank }, "User promoted to next rank");
+      // Promote all teammates if user is in a clan, otherwise promote solo user
+      if (user.currentTeamId) {
+        await db
+          .update(users)
+          .set({ rank: nextRank })
+          .where(eq(users.currentTeamId, user.currentTeamId));
+      } else {
+        await db
+          .update(users)
+          .set({ rank: nextRank })
+          .where(eq(users.id, userId));
+      }
 
-      // Notify user
-      await createNotification({
-        userId,
-        type: NOTIFICATION_TYPES.RANK_UP,
-        message: `Congratulations! You have completed the challenge and ranked up to ${nextRank}!`,
-      });
+      logger.info({ userId, teamId: user.currentTeamId, oldRank: currentRank, newRank: nextRank }, "Promoted to next rank");
+
+      // Notify clan members or solo user
+      if (user.currentTeamId) {
+        const teamMembers = await db.query.users.findMany({
+          where: eq(users.currentTeamId, user.currentTeamId),
+          columns: { id: true },
+        });
+        for (const m of teamMembers) {
+          await createNotification({
+            userId: m.id,
+            type: NOTIFICATION_TYPES.RANK_UP,
+            message: `Congratulations! Your clan completed the challenge and ranked up to ${nextRank}!`,
+          });
+        }
+      } else {
+        await createNotification({
+          userId,
+          type: NOTIFICATION_TYPES.RANK_UP,
+          message: `Congratulations! You have completed the challenge and ranked up to ${nextRank}!`,
+        });
+      }
     }
   }
 }
