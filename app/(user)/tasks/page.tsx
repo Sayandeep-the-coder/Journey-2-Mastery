@@ -29,7 +29,8 @@ import {
   GitFork, 
   ChevronDown, 
   Check, 
-  Layers 
+  Layers,
+  Lock 
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -76,7 +77,7 @@ export default function TasksPage() {
   const [taskType, setTaskType] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('');
-  const [tab, setTab] = useState('all');
+  const [tab, setTab] = useState<'all' | 'active' | 'pending' | 'completed'>('all');
 
   const { data: categories } = useTaskCategories();
   const { data: availableTasks, isLoading: isAvailLoading, isError, error, refetch } = useTasks({
@@ -92,8 +93,8 @@ export default function TasksPage() {
 
   const isLoading = isAvailLoading || isCompLoading || isPendLoading;
 
-  const completedTasks = completedSubmissions?.map((s) => s.task as Task) || [];
-  const pendingTasks = pendingSubmissions?.map((s) => s.task as Task) || [];
+  const completedTasks = completedSubmissions?.map((s) => ({ ...s.task, status: s.status, scoreEarned: s.review?.totalScore ?? null } as Task)) || [];
+  const pendingTasks = pendingSubmissions?.map((s) => ({ ...s.task, status: s.status } as Task)) || [];
 
   const filterTasks = (taskList: Task[]) => {
     return taskList.filter((t) => {
@@ -109,6 +110,8 @@ export default function TasksPage() {
   let tasks: Task[] = [];
   if (tab === 'all') {
     tasks = availableTasks || [];
+  } else if (tab === 'active') {
+    tasks = (availableTasks || []).filter((t) => t.status !== 'approved');
   } else if (tab === 'pending') {
     tasks = filterTasks(pendingTasks);
   } else if (tab === 'completed') {
@@ -383,22 +386,28 @@ export default function TasksPage() {
       </div>
 
       {/* Custom Tabs */}
-      <div className="flex items-center gap-8 mt-8 mb-6 px-4 border-b border-borders pb-4">
+      <div className="flex items-center gap-3 sm:gap-6 mt-8 mb-6 px-4 border-b border-borders pb-4 overflow-x-auto">
         <button 
           onClick={() => setTab('all')} 
-          className={cn('font-bold text-sm px-5 py-1.5 rounded-full transition-colors', tab === 'all' ? 'bg-zinc-800 text-white shadow-sm' : 'text-primary-text hover:text-japan-red')}
+          className={cn('font-bold text-sm px-4 py-1.5 rounded-full transition-colors whitespace-nowrap', tab === 'all' ? 'bg-zinc-800 text-white shadow-sm' : 'text-primary-text hover:text-japan-red')}
         >
           <span>All Tasks</span>
         </button>
         <button 
+          onClick={() => setTab('active')} 
+          className={cn('font-semibold text-sm flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-colors whitespace-nowrap', tab === 'active' ? 'bg-zinc-800 text-white shadow-sm' : 'text-secondary-text hover:text-primary-text')}
+        >
+          <Activity className="w-4 h-4 text-japan-red" /> Active Challenges
+        </button>
+        <button 
           onClick={() => setTab('pending')} 
-          className={cn('font-semibold text-sm flex items-center gap-2 transition-colors', tab === 'pending' ? 'text-primary-text' : 'text-secondary-text hover:text-primary-text')}
+          className={cn('font-semibold text-sm flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-colors whitespace-nowrap', tab === 'pending' ? 'text-primary-text' : 'text-secondary-text hover:text-primary-text')}
         >
           <Hourglass className="w-4 h-4" /> Pending
         </button>
         <button 
           onClick={() => setTab('completed')} 
-          className={cn('font-semibold text-sm flex items-center gap-2 transition-colors', tab === 'completed' ? 'text-primary-text' : 'text-secondary-text hover:text-primary-text')}
+          className={cn('font-semibold text-sm flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-colors whitespace-nowrap', tab === 'completed' ? 'text-primary-text' : 'text-secondary-text hover:text-primary-text')}
         >
           <CheckCircle2 className="w-4 h-4" /> Completed
         </button>
@@ -471,10 +480,30 @@ export default function TasksPage() {
                             Deadline: {new Date(task.deadline).toLocaleDateString()}
                           </span>
                         )}
-                        {task.status && (
-                          <span className="flex items-center gap-1.5 text-japan-red">
-                            <Activity className="w-4 h-4" />
-                            Status: <span className="capitalize">{task.status.replace('_', ' ')}</span>
+                        {task.status === 'approved' ? (
+                          <span className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full font-medium text-[11px] shadow-2xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Completed
+                          </span>
+                        ) : task.status === 'pending' || task.status === 'in_review' ? (
+                          <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium text-[11px] shadow-2xs">
+                            <Hourglass className="w-3.5 h-3.5 text-amber-600" />
+                            In Review
+                          </span>
+                        ) : task.status === 'rejected' ? (
+                          <span className="flex items-center gap-1.5 text-rose-800 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium text-[11px] shadow-2xs">
+                            <Activity className="w-3.5 h-3.5 text-japan-red" />
+                            Needs Revision
+                          </span>
+                        ) : task.isLocked ? (
+                          <span className="flex items-center gap-1.5 text-muted-text bg-secondary-bg border border-borders/80 px-2.5 py-0.5 rounded-full font-medium text-[11px]">
+                            <Lock className="w-3.5 h-3.5 text-muted-text" />
+                            Requires {task.rankRequired || 'Higher Rank'}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-japan-red bg-japan-red/8 border border-japan-red/25 px-2.5 py-0.5 rounded-full font-medium text-[11px]">
+                            <Activity className="w-3.5 h-3.5 text-japan-red" />
+                            Active
                           </span>
                         )}
                         <span className="flex items-center gap-1.5">
@@ -493,11 +522,25 @@ export default function TasksPage() {
                       </div>
                       <div className="text-xs font-bold text-secondary-text mt-1 uppercase tracking-wider">Total Points</div>
                     </div>
-                    <Button asChild variant="outline" className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-4 font-semibold shadow-sm transition-colors w-full border-borders text-primary-text hover:border-japan-red hover:bg-japan-red hover:text-white">
-                      <Link href={`/tasks/${task.id}`}>
-                        View Challenge &rarr;
-                      </Link>
-                    </Button>
+                    {task.status === 'approved' ? (
+                      <Button asChild variant="outline" className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 rounded-full px-6 py-4 font-semibold shadow-xs transition-colors w-full">
+                        <Link href={`/tasks/${task.id}`}>
+                          View Submission &rarr;
+                        </Link>
+                      </Button>
+                    ) : task.isLocked ? (
+                      <Button asChild variant="outline" className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-4 font-semibold shadow-sm transition-colors w-full border-borders text-secondary-text hover:border-borders hover:bg-secondary-bg">
+                        <Link href={`/tasks/${task.id}`}>
+                          View Specs &rarr;
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button asChild variant="outline" className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-4 font-semibold shadow-sm transition-colors w-full border-borders text-primary-text hover:border-japan-red hover:bg-japan-red hover:text-white">
+                        <Link href={`/tasks/${task.id}`}>
+                          View Challenge &rarr;
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

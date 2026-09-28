@@ -101,7 +101,11 @@ export interface Task {
   rankRequired?: Rank;
   deadline?: string | null;
   isActive?: boolean;
+  isLocked?: boolean;
+  scoreEarned?: number | null;
   status?: SubmissionStatus | 'submitted';
+  submissionStatus?: SubmissionStatus | null;
+  submissionId?: string | null;
   rubric?: string;
   criteria?: ReviewCriterion[];
   passingScore?: number;
@@ -267,6 +271,10 @@ export interface RepoInfo {
 export interface RankConfig {
   name: string;
   pts: number;
+  level?: number;
+  status?: 'completed' | 'current' | 'locked' | 'in_review' | 'rejected';
+  scoreEarned?: number | null;
+  passingScore?: number | null;
   desc: string;
   diff: string;
 }

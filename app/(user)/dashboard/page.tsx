@@ -8,7 +8,7 @@ import ErrorState from '@/components/shared/ErrorState';
 import EmptyState from '@/components/shared/EmptyState';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, ListChecks, Clock, Star, ArrowRight, Activity, Shield, Users, Crown } from 'lucide-react';
+import { Trophy, ListChecks, Clock, Star, ArrowRight, Activity, Shield, Users, Crown, Check, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -48,14 +48,37 @@ export default function UserDashboard() {
   const currentRankIndex = ranksConfig.findIndex((r: RankConfig) => r.name === currentRankName);
   const currentRankData = ranksConfig[currentRankIndex !== -1 ? currentRankIndex : 0] || { name: 'Ronin', pts: 0, desc: '', diff: 'Easy' };
   const nextRank = currentRankIndex < ranksConfig.length - 1 ? ranksConfig[currentRankIndex + 1] : null;
-  const rankProgressPercent = currentRankIndex === -1 ? 0 : (currentRankIndex / Math.max(ranksConfig.length - 1, 1)) * 100;
+
+  const currentTaskSubmission = submissions?.find((s) => s.taskId === data.currentTask?.id);
+
+  const currentTaskStatus: 'not_submitted' | 'pending' | 'in_review' | 'approved' | 'rejected' = (() => {
+    if (currentTaskSubmission?.status) return currentTaskSubmission.status;
+    if (data.currentTask?.submissionStatus) return data.currentTask.submissionStatus;
+    if (data.currentTask?.status && ['pending', 'in_review', 'approved', 'rejected'].includes(data.currentTask.status)) {
+      return data.currentTask.status as 'pending' | 'in_review' | 'approved' | 'rejected';
+    }
+    if (currentRankData?.status === 'in_review') return 'in_review';
+    if (currentRankData?.status === 'rejected') return 'rejected';
+    if (currentRankData?.status === 'completed') return 'approved';
+    return 'not_submitted';
+  })();
+
+  const completedLevelsCount = ranksConfig.filter((r: RankConfig) => r.status === 'completed').length;
+  const rankProgressPercent = (completedLevelsCount / 4) * 100;
+
+  const rankMeta: Record<string, { subtitle: string }> = {
+    Ronin: { subtitle: 'Product Vision' },
+    Kenshi: { subtitle: 'Frontend Craft' },
+    Samurai: { subtitle: 'Full-Stack' },
+    Shogun: { subtitle: 'Production' },
+  };
 
   const getRankIcon = (rankName: string) => {
     switch (rankName) {
       case 'Ronin': return Star;
       case 'Kenshi': return Trophy;
-      case 'Samurai': return ListChecks;
-      case 'Shogun': return Star;
+      case 'Samurai': return Shield;
+      case 'Shogun': return Crown;
       default: return Star;
     }
   };
@@ -179,46 +202,168 @@ export default function UserDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
         {/* Bento Tile 1: Rank Progress Timeline (Span 8) */}
-        <Card className="md:col-span-8 rounded-3xl overflow-hidden border-borders shadow-xs bg-white/70 backdrop-blur-sm flex flex-col justify-between hover:shadow-md transition-all duration-300">
-          <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full">
+        <Card className="md:col-span-8 rounded-3xl overflow-hidden border border-borders bg-card-bg shadow-xs flex flex-col justify-between hover:shadow-md transition-all duration-300 relative">
+          <div 
+            className="absolute -right-12 -bottom-12 w-64 h-64 opacity-5 pointer-events-none z-0"
+            style={{ backgroundImage: 'radial-gradient(circle, #B93A32 10%, transparent 70%)' }}
+          />
+          <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full relative z-10">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <NinjaStarIcon className="w-6 h-6 text-japan-red" />
-                  <h2 className="font-serif text-xl font-bold text-primary-text">Rank Progress</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold tracking-widest text-japan-red uppercase font-serif">
+                      Progression Path
+                    </span>
+                  </div>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-primary-text flex items-center gap-2.5">
+                    <NinjaStarIcon className="w-5 h-5 text-japan-red" />
+                    Level &amp; Rank Progression
+                  </h2>
                 </div>
-                <span className="text-xs font-bold text-muted-text uppercase tracking-wider bg-secondary-bg/80 px-3 py-1 rounded-full border border-borders">
-                  {Math.round(rankProgressPercent)}% Complete
-                </span>
+                <div className="self-start sm:self-auto">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-japan-red bg-japan-red/8 px-3.5 py-1 rounded-full border border-japan-red/25 font-serif shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-japan-red animate-pulse" />
+                    Tier {Math.min(currentRankIndex + 1, 4)} of 4 · {currentRankName}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-secondary-text mb-6">Complete tasks to accumulate points and elevate your warrior rank.</p>
+              <p className="text-sm text-secondary-text max-w-xl">
+                Ascend through the four sacred martial tiers. Submit challenge deliverables to the Council of Judges to unlock higher tiers.
+              </p>
             </div>
             
-            {/* Timeline Bar */}
-            <div className="relative w-full py-6 my-auto">
-              <div className="absolute top-12 left-10 right-10 z-0">
-                <div className="w-full h-1.5 bg-borders -translate-y-1/2 rounded-full" />
+            {/* Timeline Medallion Path */}
+            <div className="relative w-full py-8 my-auto">
+              {/* Connecting Path Track */}
+              <div className="absolute top-[64px] left-10 sm:left-14 right-10 sm:right-14 z-0">
+                <div className="w-full h-1.5 bg-[#E8E1D5] -translate-y-1/2 rounded-full" />
                 <div 
-                  className="absolute top-0 left-0 h-1.5 bg-japan-red -translate-y-1/2 rounded-full transition-all duration-1000" 
-                  style={{ width: `${rankProgressPercent}%` }} 
+                  className="absolute top-0 left-0 h-1.5 bg-gradient-to-r from-japan-red via-dark-red to-japan-red -translate-y-1/2 rounded-full transition-all duration-700 shadow-xs" 
+                  style={{ width: `${Math.min(100, Math.max(0, (completedLevelsCount / 3) * 100))}%` }} 
                 />
               </div>
               
-              <div className="relative flex justify-between z-10">
+              <div className="relative flex justify-between z-10 px-0 sm:px-2">
                 {ranksConfig.map((rank: RankConfig, i: number) => {
-                  const isActive = i <= currentRankIndex;
-                  const Icon = getRankIcon(rank.name);
+                  const isCompleted = rank.status === 'completed';
+                  const isCurrent = rank.status === 'current';
+                  const isInReview = rank.status === 'in_review';
+                  const isRejected = rank.status === 'rejected';
+                  const isLocked = rank.status === 'locked' || (!isCompleted && !isCurrent && !isInReview && !isRejected);
+                  const meta = rankMeta[rank.name] || { subtitle: '' };
+                  const avatarPath = `/${rank.name.toLowerCase()}.png`;
+
                   return (
-                    <div key={rank.name} className="flex flex-col items-center w-20 shrink-0">
-                      <div className={cn(
-                        "w-11 h-11 rounded-2xl flex items-center justify-center border-2 transition-all bg-white mb-2 shadow-xs",
-                        isActive ? "border-japan-red text-japan-red ring-4 ring-japan-red/10" : "border-borders text-muted-text opacity-70"
-                      )}>
-                        <Icon className="w-5 h-5" />
+                    <div key={rank.name} className="flex flex-col items-center w-20 sm:w-28 shrink-0 group">
+                      {/* Circular Medallion */}
+                      <div className="relative mb-3.5">
+                        <div className={cn(
+                          "w-16 h-16 sm:w-[70px] sm:h-[70px] rounded-full flex items-center justify-center transition-all duration-300 relative overflow-hidden",
+                          isCompleted && "bg-[#FAF7F2] border-2 border-emerald-600 ring-4 ring-emerald-500/15 shadow-sm",
+                          isInReview && "bg-[#FAF7F2] border-2 border-amber-500 ring-4 ring-amber-500/20 shadow-sm",
+                          isRejected && "bg-[#FAF7F2] border-2 border-rose-500 ring-4 ring-rose-500/20 shadow-sm",
+                          isCurrent && "bg-white border-2 border-japan-red ring-4 ring-japan-red/20 shadow-md scale-105",
+                          isLocked && "bg-[#FAF7F2]/80 border-2 border-borders/80 opacity-70 group-hover:opacity-90"
+                        )}>
+                          {/* Inner warrior illustration */}
+                          <div className={cn(
+                            "w-full h-full relative p-2 transition-transform duration-300 group-hover:scale-105",
+                            isLocked && "grayscale contrast-125 opacity-35"
+                          )}>
+                            <Image 
+                              src={avatarPath} 
+                              alt={rank.name} 
+                              fill 
+                              className="object-contain p-1" 
+                            />
+                          </div>
+
+                          {/* Subtle warm wash for current tier */}
+                          {isCurrent && (
+                            <div className="absolute inset-0 bg-radial from-japan-red/10 to-transparent pointer-events-none" />
+                          )}
+                        </div>
+
+                        {/* Top Level Chip */}
+                        <span className={cn(
+                          "absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold px-2 py-0.5 rounded-full border shadow-2xs font-serif leading-none whitespace-nowrap",
+                          isCompleted && "bg-card-bg border-emerald-300 text-emerald-800",
+                          isCurrent && "bg-japan-red border-japan-red text-white shadow-xs",
+                          isInReview && "bg-card-bg border-amber-300 text-amber-800",
+                          isRejected && "bg-card-bg border-rose-300 text-rose-800",
+                          isLocked && "bg-secondary-bg border-borders text-muted-text"
+                        )}>
+                          L{rank.level || (i + 1)}
+                        </span>
+
+                        {/* Bottom-right Status Badge */}
+                        <div className="absolute -bottom-1 -right-1 z-20">
+                          {isCompleted ? (
+                            <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center ring-2 ring-card-bg shadow-xs">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                          ) : isInReview ? (
+                            <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center ring-2 ring-card-bg shadow-xs animate-pulse">
+                              <Clock className="w-3 h-3 stroke-[2.5]" />
+                            </div>
+                          ) : isRejected ? (
+                            <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center ring-2 ring-card-bg shadow-xs">
+                              <AlertCircle className="w-3 h-3 stroke-[2.5]" />
+                            </div>
+                          ) : isCurrent ? (
+                            <div className="w-5 h-5 rounded-full bg-japan-red text-white flex items-center justify-center ring-2 ring-card-bg shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-secondary-bg border border-borders text-muted-text flex items-center justify-center ring-2 ring-card-bg shadow-2xs">
+                              <Lock className="w-2.5 h-2.5 opacity-70" />
+                            </div>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Rank Label & Subtitle */}
                       <div className="text-center w-full">
-                        <p className={cn("font-bold text-xs md:text-sm", isActive ? "text-japan-red" : "text-secondary-text")}>{rank.name}</p>
-                        <p className="text-[11px] text-muted-text mt-0.5">{i === currentRankIndex ? 'Current' : `${rank.pts} pts`}</p>
+                        <p className={cn(
+                          "font-serif font-bold text-sm tracking-wide",
+                          isCompleted && "text-emerald-800",
+                          isCurrent && "text-japan-red font-black",
+                          isInReview && "text-amber-800",
+                          isRejected && "text-rose-800",
+                          isLocked && "text-secondary-text"
+                        )}>
+                          {rank.name}
+                        </p>
+                        <p className="text-[10px] text-muted-text tracking-tight hidden sm:block truncate mt-0.5">
+                          {meta.subtitle}
+                        </p>
+
+                        {/* Status / Requirement Indicator */}
+                        <div className="mt-1 flex justify-center">
+                          {isCompleted ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full shadow-2xs font-sans">
+                              {rank.scoreEarned != null ? `${rank.scoreEarned} pts` : 'Mastered'}
+                            </span>
+                          ) : isInReview ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shadow-2xs font-sans">
+                              In Review
+                            </span>
+                          ) : isRejected ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shadow-2xs font-sans">
+                              Needs Fix
+                            </span>
+                          ) : isCurrent ? (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-japan-red bg-japan-red/8 border border-japan-red/25 px-2.5 py-0.5 rounded-full shadow-2xs font-sans">
+                              <span className="w-1.5 h-1.5 rounded-full bg-japan-red animate-pulse" />
+                              In Progress
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted-text/80 font-medium">
+                              Locked
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -226,17 +371,48 @@ export default function UserDashboard() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-borders/40 flex items-center justify-between text-xs text-muted-text font-medium">
-              <span>Current: <strong className="text-primary-text">{currentRankIndex >= 0 ? ranksConfig[currentRankIndex]?.pts : 0} pts</strong></span>
-              <span>Next Rank: <strong className="text-primary-text">{nextRank ? `${nextRank.pts} pts` : 'Maxed Out'}</strong></span>
+            {/* Footer */}
+            <div className="pt-4 border-t border-borders/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium">
+              <div className="flex items-center gap-2 flex-wrap text-secondary-text">
+                <span className="text-muted-text">Active Tier:</span>
+                <strong className="text-primary-text font-serif text-sm">{currentRankName}</strong>
+                <span className="text-borders">·</span>
+                <span className="text-muted-text">{data.team ? 'Clan Honor:' : 'Total Honor:'}</span>
+                <strong className="text-japan-red font-serif text-sm">{data.totalScore || 0} pts</strong>
+              </div>
+              <div className="text-left sm:text-right">
+                {nextRank ? (
+                  <span className="text-secondary-text">
+                    Next Tier: Pass <strong className="text-japan-red font-serif">{currentRankName}</strong> to ascend to <strong className="text-primary-text font-serif">{nextRank.name}</strong>
+                  </span>
+                ) : (
+                  <span className="text-amber-800 bg-amber-50 border border-amber-200 font-serif font-bold px-3 py-1 rounded-full">
+                    👑 Grandmaster Shogun · All Martial Levels Mastered
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Bento Tile 2: Continue Journey OR Congratulations Card (Span 4) */}
-        <Card className="md:col-span-4 rounded-3xl border-borders shadow-xs bg-white/80 overflow-hidden relative flex flex-col justify-between hover:shadow-md transition-all duration-300">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-japan-red" />
-          <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full">
+        <Card className="md:col-span-4 rounded-3xl border border-borders bg-card-bg shadow-xs overflow-hidden relative flex flex-col justify-between hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-japan-red to-hover-red" />
+          
+          {/* Subtle Torii Background Blend */}
+          <div 
+            className="absolute -right-4 -bottom-4 w-44 h-44 opacity-15 pointer-events-none z-0"
+            style={{ maskImage: 'radial-gradient(circle, black, transparent 75%)', WebkitMaskImage: 'radial-gradient(circle, black, transparent 75%)' }}
+          >
+            <Image 
+              src="/images/landscape-torii.png" 
+              alt="Torii" 
+              fill 
+              className="object-contain mix-blend-multiply grayscale contrast-125" 
+            />
+          </div>
+
+          <CardContent className="p-6 md:p-8 flex flex-col justify-between h-full relative z-10">
             {(data.tasksAvailable ?? 0) === 0 ? (
               /* All Tasks Completed / Victory State */
               <>
@@ -246,7 +422,7 @@ export default function UserDashboard() {
                       🎉 Victory
                     </span>
                     <span className="text-xs font-bold text-japan-red font-serif">
-                      All Tasks Completed!
+                      All Levels Completed!
                     </span>
                   </div>
 
@@ -255,9 +431,9 @@ export default function UserDashboard() {
                       <Trophy className="w-10 h-10 animate-bounce" />
                     </div>
                     <div>
-                      <h3 className="font-serif text-2xl font-bold text-primary-text">Congratulations!</h3>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text">Grandmaster!</h3>
                       <p className="text-xs text-secondary-text mt-1 leading-relaxed">
-                        You have completed all available tasks in Journey to Mastery. Check the Hall of Masters for your rank!
+                        You have conquered all martial levels in Journey to Mastery. Check the Hall of Masters for your final standings!
                       </p>
                     </div>
                   </div>
@@ -266,7 +442,7 @@ export default function UserDashboard() {
                 <div className="pt-6 border-t border-borders/50 mt-4">
                   <Link 
                     href="/leaderboard" 
-                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                    className="w-full py-3.5 rounded-2xl bg-japan-red text-white font-bold hover:bg-hover-red transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
                   >
                     View Leaderboard <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -275,38 +451,108 @@ export default function UserDashboard() {
             ) : (
               /* Tasks Available / Active Task Goal State */
               <>
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/10 px-3 py-1 rounded-full border border-japan-red/20">
-                      {(data.currentTask?.difficulty || currentRankData?.diff || 'ACTIVE').toUpperCase()}
+                <div className="space-y-4">
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-japan-red bg-japan-red/8 px-3 py-1 rounded-full border border-japan-red/20 font-serif">
+                      <NinjaStarIcon className="w-3.5 h-3.5 text-japan-red" />
+                      Active Trial
                     </span>
-                    <span className="text-xs font-bold text-secondary-text font-serif">
-                      {data.currentTask ? `${data.currentTask.points} pts goal` : (nextRank ? `${nextRank.pts} pts goal` : 'Active Goal')}
+                    <span className="text-xs font-bold text-secondary-text bg-secondary-bg/80 border border-borders/70 px-3 py-1 rounded-full font-serif">
+                      {data.currentTask?.points ?? 100} pts reward
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-4 my-3">
-                    <div className="w-20 h-20 rounded-2xl bg-secondary-bg/50 border border-borders shadow-xs shrink-0 overflow-hidden relative">
+                  {/* Task Identity */}
+                  <div className="flex items-center gap-4 pt-1">
+                    <div className="w-20 h-20 rounded-2xl bg-[#FAF7F2] border border-borders/80 shadow-xs shrink-0 overflow-hidden relative p-1.5 group-hover:border-japan-red/40 transition-colors">
                       <Image 
-                        src={`/${(data.currentTask?.rankRequired || currentRankName || 'ronin').toLowerCase()}.png`} 
+                        src={`/${(data.currentTask?.title || currentRankName || 'ronin').toLowerCase().includes('ronin') ? 'ronin' : (data.currentTask?.title || currentRankName || '').toLowerCase().includes('kenshi') ? 'kenshi' : (data.currentTask?.title || currentRankName || '').toLowerCase().includes('samurai') ? 'samurai' : 'shogun'}.png`} 
                         alt={data.currentTask?.title || currentRankName || 'Task'} 
                         fill 
-                        className="object-contain p-2" 
+                        className="object-contain p-1" 
                       />
                     </div>
-                    <div>
-                      <h3 className="font-serif text-2xl font-bold text-primary-text">{data.currentTask?.title || currentRankData.name}</h3>
-                      <p className="text-xs text-muted-text mt-1 line-clamp-2">{data.currentTask?.shortDescription || data.currentTask?.description || currentRankData.desc}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] uppercase font-bold text-muted-text tracking-wider">
+                          Level {Math.min(currentRankIndex + 1, 4)} Challenge
+                        </span>
+                      </div>
+                      <h3 className="font-serif text-2xl font-bold text-primary-text leading-tight truncate">
+                        {data.currentTask?.title || currentRankData.name}
+                      </h3>
+                      <p className="text-xs text-secondary-text mt-1 line-clamp-2 leading-relaxed">
+                        {data.currentTask?.shortDescription || data.currentTask?.description || currentRankData.desc}
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Editorial Ascension Box (Japanese scroll feel) with dynamic task status */}
+                  <div className={cn(
+                    "border-l-3 bg-secondary-bg/60 rounded-r-2xl p-3.5 border-y border-r border-borders/60 text-xs text-secondary-text space-y-1.5 transition-colors",
+                    currentTaskStatus === 'in_review' || currentTaskStatus === 'pending'
+                      ? 'border-l-amber-500 bg-amber-500/[0.04]'
+                      : currentTaskStatus === 'rejected'
+                      ? 'border-l-rose-500 bg-rose-500/[0.04]'
+                      : currentTaskStatus === 'approved'
+                      ? 'border-l-emerald-600 bg-emerald-500/[0.04]'
+                      : 'border-l-japan-red'
+                  )}>
+                    <div className="font-semibold text-primary-text flex items-center justify-between">
+                      <span>Level Advancement</span>
+                      {currentTaskStatus === 'in_review' || currentTaskStatus === 'pending' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/90 shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          In Review
+                        </span>
+                      ) : currentTaskStatus === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200/90 shadow-2xs">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                          Needs Revision
+                        </span>
+                      ) : currentTaskStatus === 'approved' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/90 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FAF7F2] text-secondary-text border border-borders shadow-2xs">
+                          <Clock className="w-3.5 h-3.5 text-muted-text" />
+                          Not Submitted
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-text leading-normal">
+                      {currentTaskStatus === 'in_review' || currentTaskStatus === 'pending' ? (
+                        <>Repository submitted and awaiting evaluation by the judges. Once reviewed, your score and rank status will update.</>
+                      ) : currentTaskStatus === 'rejected' ? (
+                        <>Judge evaluation returned with feedback. Revise and resubmit your repository to earn your rank ascension.</>
+                      ) : currentTaskStatus === 'approved' ? (
+                        <>Trial passed! Submission approved by judges. Your rank ascends {nextRank ? <>to <strong className="text-primary-text font-serif">{nextRank.name}</strong></> : 'to the Grandmaster tier'}.</>
+                      ) : (
+                        <>Submit your repository for evaluation. Once approved by judges, your rank ascends {nextRank ? <>to <strong className="text-primary-text font-serif">{nextRank.name}</strong></> : 'to the Grandmaster tier'}.</>
+                      )}
+                    </p>
                   </div>
                 </div>
 
+                {/* Dojo CTA Button */}
                 <div className="pt-6 border-t border-borders/50 mt-4">
                   <Link 
-                    href="/tasks" 
-                    className="w-full py-3 rounded-2xl bg-japan-red text-white font-bold hover:bg-japan-red/90 transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99]"
+                    href={data.currentTask?.id ? `/tasks/${data.currentTask.id}` : "/tasks"} 
+                    className="w-full py-3.5 rounded-2xl bg-japan-red text-white font-bold hover:bg-hover-red transition-all flex items-center justify-center gap-2 text-sm shadow-xs active:scale-[0.99] group"
                   >
-                    View Available Tasks ({data.tasksAvailable}) <ArrowRight className="w-4 h-4" />
+                    <span>
+                      {currentTaskStatus === 'in_review' || currentTaskStatus === 'pending'
+                        ? 'View Submission Status'
+                        : currentTaskStatus === 'rejected'
+                        ? 'Revise Submission'
+                        : currentTaskStatus === 'approved'
+                        ? 'View Submission Details'
+                        : 'Enter Challenge Dojo'}
+                    </span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                 </div>
               </>

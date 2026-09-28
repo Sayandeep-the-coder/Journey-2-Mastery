@@ -9,7 +9,7 @@ import type { Rank, TaskCategory } from "../db/schema";
 import { enrichReviewWithScores, getPreviousJudgedSubmissions } from "./judge.service";
 import { assignJudge } from "./assignment.service";
 import { createNotification } from "./notification.service";
-import type { ReviewCriterion } from "@/types/api.types";
+import type { ReviewCriterion, RankConfig } from "@/types/api.types";
 
 // ──────────────────────────────────────────────
 // Dashboard
@@ -94,21 +94,11 @@ export async function getDashboard(userId: string) {
       totalScore = Number(team.score ?? 0);
       leaderboardRank = teamRank;
 
-      // Determine clan martial rank:
-      // 1. Check the highest earned rank among clan members (or user's rank)
+      // Determine clan martial rank from highest earned rank among clan members (or user's rank)
       const memberRanks = clanMembers.map((m) => m.rank as Rank);
-      const highestMemberRank = RANK_ORDER.reduce((highest, current) => {
+      effectiveRank = RANK_ORDER.reduce((highest, current) => {
         return memberRanks.includes(current) ? current : highest;
       }, (user.rank as Rank) || 'Ronin');
-
-      // 2. Also check if score warrants a higher rank
-      let scoreRank: Rank = 'Ronin';
-      if (totalScore >= 300) scoreRank = 'Shogun';
-      else if (totalScore >= 200) scoreRank = 'Samurai';
-      else if (totalScore >= 100) scoreRank = 'Kenshi';
-
-      // Clan rank is whichever is higher: task milestone rank or score rank (never demote earned rank)
-      effectiveRank = isRankSufficient(highestMemberRank, scoreRank) ? highestMemberRank : scoreRank;
 
       const membersWithGithub = clanMembers.map((m) => ({
         ...m,
@@ -173,19 +163,140 @@ export async function getDashboard(userId: string) {
   const uncompletedActiveTasks = activeTasks.filter((t) => !completedTaskIds.has(t.id));
   const currentTask = uncompletedActiveTasks[0] || null;
 
-  const ranksConfig = [
-    { name: 'Ronin', pts: 0, desc: 'Ronin is the first level of Journey to Mastery. You have no backend, no database, no auth. Just you, a browser, and a blank canvas.', diff: 'Easy' },
-    { name: 'Kenshi', pts: 100, desc: 'You have proven yourself worthy. Now you must master the fundamental structures of the web and components.', diff: 'Medium' },
-    { name: 'Samurai', pts: 200, desc: 'A true warrior. You now wield the power of databases and servers with precision.', diff: 'Hard' },
-    { name: 'Shogun', pts: 300, desc: 'Master of the domain. Your architecture is flawless and your code is legendary.', diff: 'Master' },
+  // Fetch all submissions with task and review details for this warrior/clan to track level progress
+  const userSubmissions = await db
+    .select({
+      submissionId: submissions.id,
+      taskId: submissions.taskId,
+      status: submissions.status,
+      submittedAt: submissions.submittedAt,
+      taskTitle: tasks.title,
+      taskRank: tasks.rankRequired,
+      taskPassingScore: tasks.passingScore,
+      taskPoints: tasks.points,
+      totalScore: reviews.totalScore,
+    })
+    .from(submissions)
+    .innerJoin(tasks, eq(submissions.taskId, tasks.id))
+    .leftJoin(reviews, eq(reviews.submissionId, submissions.id))
+    .where(
+      teamInfo
+        ? eq(submissions.teamId, teamInfo.id)
+        : and(eq(submissions.userId, userId), isNull(submissions.teamId))
+    );
+
+  const allMainTasks = await db.query.tasks.findMany({
+    where: eq(tasks.track, "main"),
+    columns: { id: true, title: true, rankRequired: true, passingScore: true, points: true },
+  });
+
+  const userRankIdx = RANK_ORDER.indexOf(effectiveRank);
+
+  const LEVEL_DEFINITIONS: Array<{
+    name: Rank;
+    level: number;
+    diff: string;
+    desc: string;
+  }> = [
+    {
+      name: 'Ronin',
+      level: 1,
+      diff: 'Easy',
+      desc: 'Level 1: System planning, architecture, PRD, and design foundations. Master the canvas without backend or auth.',
+    },
+    {
+      name: 'Kenshi',
+      level: 2,
+      diff: 'Medium',
+      desc: 'Level 2: Frontend craft, components, animations, and undeniable UI polish. Turn your plan into what people see.',
+    },
+    {
+      name: 'Samurai',
+      level: 3,
+      diff: 'Hard',
+      desc: 'Level 3: Full-stack power, backend endpoints, database precision, and state architecture.',
+    },
+    {
+      name: 'Shogun',
+      level: 4,
+      diff: 'Master',
+      desc: 'Level 4: Master of the domain. Flawless production architecture, resilience, and legendary craft.',
+    },
   ];
+
+  const ranksConfig: RankConfig[] = LEVEL_DEFINITIONS.map((lvlDef, idx) => {
+    // Dynamically find task corresponding to this level from DB
+    const matchingTask = allMainTasks.find((t) => {
+      const titleUpper = t.title.toUpperCase();
+      return titleUpper.includes(lvlDef.name.toUpperCase()) || t.rankRequired === lvlDef.name;
+    });
+
+    const passingScore = matchingTask ? matchingTask.passingScore : null;
+
+    // Find submissions for this level
+    const lvlSubmissions = userSubmissions.filter((s) => {
+      const titleUpper = s.taskTitle.toUpperCase();
+      return titleUpper.includes(lvlDef.name.toUpperCase()) || s.taskRank === lvlDef.name;
+    });
+
+    const approvedSub = lvlSubmissions.find((s) => s.status === 'approved');
+    const inReviewSub = lvlSubmissions.find((s) => s.status === 'in_review' || s.status === 'pending');
+    const rejectedSub = lvlSubmissions.find((s) => s.status === 'rejected');
+
+    let status: 'completed' | 'current' | 'locked' | 'in_review' | 'rejected' = 'locked';
+    let scoreEarned: number | null = null;
+
+    if (approvedSub) {
+      status = 'completed';
+      scoreEarned = approvedSub.totalScore ?? null;
+    } else if (idx < userRankIdx) {
+      // User has already advanced past this level (e.g. rank-up was applied)
+      status = 'completed';
+      scoreEarned = lvlSubmissions[0]?.totalScore ?? null;
+    } else if (idx === userRankIdx) {
+      if (inReviewSub) {
+        status = 'in_review';
+      } else if (rejectedSub) {
+        status = 'rejected';
+        scoreEarned = rejectedSub.totalScore ?? null;
+      } else {
+        status = 'current';
+      }
+    } else {
+      status = 'locked';
+    }
+
+    return {
+      name: lvlDef.name,
+      level: lvlDef.level,
+      status,
+      scoreEarned,
+      passingScore,
+      pts: scoreEarned ?? 0,
+      desc: lvlDef.desc,
+      diff: lvlDef.diff,
+    };
+  });
+
+  const currentTaskSubmission = currentTask
+    ? userSubmissions.find((s) => s.taskId === currentTask.id)
+    : null;
+
+  const enrichedCurrentTask = currentTask
+    ? {
+        ...currentTask,
+        submissionId: currentTaskSubmission?.submissionId || null,
+        submissionStatus: (currentTaskSubmission?.status as 'pending' | 'in_review' | 'approved' | 'rejected') || null,
+        scoreEarned: currentTaskSubmission?.totalScore ?? null,
+      }
+    : null;
 
   return {
     rank: effectiveRank,
     totalScore,
     tasksCompleted: completedTaskIds.size,
     tasksAvailable: uncompletedActiveTasks.length,
-    currentTask,
+    currentTask: enrichedCurrentTask,
     ranksConfig,
     team: teamInfo,
     leaderboardRank,
@@ -197,17 +308,29 @@ export async function getDashboard(userId: string) {
 // ──────────────────────────────────────────────
 
 /**
- * List tasks available for the user's current rank.
+ * List tasks available for the user. Returns all active/visible challenges,
+ * ordered by level progression and enriched with user's rank lock and submission status.
  */
 export async function getAvailableTasks(userId: string, filters: TaskFilterInput) {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { rank: true },
+    columns: { rank: true, currentTeamId: true },
   });
 
   if (!user) throw notFound("User", userId);
 
-  const availableRanks = getAvailableRanks(user.rank);
+  // Determine effective rank (if in clan, highest rank among members)
+  let effectiveRank = (user.rank as Rank) || "Ronin";
+  if (user.currentTeamId) {
+    const clanMembers = await db.query.users.findMany({
+      where: eq(users.currentTeamId, user.currentTeamId),
+      columns: { rank: true },
+    });
+    const memberRanks = clanMembers.map((m) => m.rank as Rank);
+    effectiveRank = RANK_ORDER.reduce((highest, current) => {
+      return memberRanks.includes(current) ? current : highest;
+    }, effectiveRank);
+  }
 
   const conditions = [
     eq(tasks.isActive, true),
@@ -216,21 +339,7 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
   if (filters.track === "web3") {
     conditions.push(eq(tasks.track, "web3"));
   } else if (filters.track === "main") {
-    conditions.push(
-      eq(tasks.track, "main"),
-      inArray(tasks.rankRequired, availableRanks)
-    );
-  } else {
-    // All tracks: Web3 tasks are open to all, main tasks require available rank
-    conditions.push(
-      or(
-        eq(tasks.track, "web3"),
-        and(
-          eq(tasks.track, "main"),
-          inArray(tasks.rankRequired, availableRanks)
-        )
-      )!
-    );
+    conditions.push(eq(tasks.track, "main"));
   }
 
   if (filters.taskType) {
@@ -258,11 +367,52 @@ export async function getAvailableTasks(userId: string, filters: TaskFilterInput
     .select()
     .from(tasks)
     .where(and(...conditions))
-    .orderBy(asc(tasks.id))
+    .orderBy(
+      sql`CASE ${tasks.rankRequired}
+        WHEN 'Ronin' THEN 1
+        WHEN 'Kenshi' THEN 2
+        WHEN 'Samurai' THEN 3
+        WHEN 'Shogun' THEN 4
+        ELSE 5 END ASC`,
+      asc(tasks.createdAt),
+      asc(tasks.id)
+    )
     .limit(filters.limit + 1);
 
   const hasMore = result.length > filters.limit;
-  const items = hasMore ? result.slice(0, filters.limit) : result;
+  const rawItems = hasMore ? result.slice(0, filters.limit) : result;
+
+  // Fetch user/team submissions for these tasks to enrich status
+  const userSubmissions = await db.query.submissions.findMany({
+    where: user.currentTeamId
+      ? or(eq(submissions.userId, userId), eq(submissions.teamId, user.currentTeamId))
+      : eq(submissions.userId, userId),
+    columns: { taskId: true, status: true },
+    with: {
+      review: {
+        columns: { totalScore: true },
+      },
+    },
+    orderBy: [desc(submissions.submittedAt)],
+  });
+
+  const submissionMap = new Map<string, typeof userSubmissions[0]>();
+  for (const s of userSubmissions) {
+    if (!submissionMap.has(s.taskId)) {
+      submissionMap.set(s.taskId, s);
+    }
+  }
+
+  const items = rawItems.map((t) => {
+    const sub = submissionMap.get(t.id);
+    const hasRank = t.track === "web3" || isRankSufficient(effectiveRank, t.rankRequired as Rank);
+    return {
+      ...t,
+      status: sub?.status ?? null,
+      scoreEarned: sub?.review?.totalScore ?? null,
+      isLocked: !hasRank,
+    };
+  });
 
   return {
     items,
@@ -701,10 +851,10 @@ export async function getProfile(userId: string) {
       const teamType = memberCount >= 3 ? 'trio' : memberCount === 2 ? 'duo' : 'solo';
 
       effectiveScore = Number(teamRecord.score ?? 0);
-      if (effectiveScore >= 300) effectiveRank = 'Shogun';
-      else if (effectiveScore >= 200) effectiveRank = 'Samurai';
-      else if (effectiveScore >= 100) effectiveRank = 'Kenshi';
-      else effectiveRank = 'Ronin';
+      const memberRanks = clanMembers.map((m) => m.rank as Rank);
+      effectiveRank = RANK_ORDER.reduce((highest, current) => {
+        return memberRanks.includes(current) ? current : highest;
+      }, (user.rank as Rank) || 'Ronin');
 
       const membersWithGithub = clanMembers.map((m) => ({
         ...m,
@@ -801,16 +951,23 @@ export async function checkAndPromoteUser(userId: string, taskId: string): Promi
 
   const task = await db.query.tasks.findFirst({
     where: eq(tasks.id, taskId),
-    columns: { rankRequired: true },
+    columns: { title: true, rankRequired: true },
   });
 
   if (!user || !task) return;
 
   const currentRank = user.rank as Rank;
   const taskRank = task.rankRequired as Rank;
+  const titleUpper = task.title.toUpperCase();
 
-  // Promote only if completing a task of their current rank level
-  if (currentRank === taskRank) {
+  // Promote if completing a task matching their current rank level
+  const matchesCurrentLevel =
+    currentRank === taskRank ||
+    (currentRank === 'Ronin' && (titleUpper.includes('RONIN') || taskRank === 'Ronin')) ||
+    (currentRank === 'Kenshi' && (titleUpper.includes('KENSHI') || taskRank === 'Kenshi')) ||
+    (currentRank === 'Samurai' && (titleUpper.includes('SAMURAI') || taskRank === 'Samurai'));
+
+  if (matchesCurrentLevel) {
     const currentIdx = RANK_ORDER.indexOf(currentRank);
     if (currentIdx !== -1 && currentIdx < RANK_ORDER.length - 1) {
       const nextRank = RANK_ORDER[currentIdx + 1]!;

@@ -28,6 +28,10 @@ export interface UserDashboardData {
     difficulty: string;
     points: number;
     rankRequired: string;
+    status?: 'pending' | 'in_review' | 'approved' | 'rejected' | 'submitted' | null;
+    submissionStatus?: 'pending' | 'in_review' | 'approved' | 'rejected' | null;
+    submissionId?: string | null;
+    scoreEarned?: number | null;
   } | null;
 }
 

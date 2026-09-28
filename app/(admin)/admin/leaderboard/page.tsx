@@ -16,13 +16,10 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import type { Rank } from '@/types/api.types';
 
-function getPureMartialRank(score: number, rank?: string): Rank {
+function getPureMartialRank(_score: number, rank?: string): Rank {
   if (rank && ['Ronin', 'Kenshi', 'Samurai', 'Shogun'].includes(rank)) {
     return rank as Rank;
   }
-  if (score >= 300) return 'Shogun';
-  if (score >= 200) return 'Samurai';
-  if (score >= 100) return 'Kenshi';
   return 'Ronin';
 }
 

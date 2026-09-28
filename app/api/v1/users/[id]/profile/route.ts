@@ -6,13 +6,10 @@ import { eq, and, count } from "drizzle-orm";
 import { notFound } from "@/lib/utils/apiError";
 import type { Rank, TeamType } from "@/types/api.types";
 
-function resolveMartialRank(score: number, rank?: string): Rank {
+function resolveMartialRank(_score: number, rank?: string): Rank {
   if (rank && ["Ronin", "Kenshi", "Samurai", "Shogun"].includes(rank)) {
     return rank as Rank;
   }
-  if (score >= 300) return "Shogun";
-  if (score >= 200) return "Samurai";
-  if (score >= 100) return "Kenshi";
   return "Ronin";
 }
 
